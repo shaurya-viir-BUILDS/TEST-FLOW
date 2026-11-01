@@ -112,3 +112,4 @@ def update_product(
     resp = ProductModelResponse.model_validate(product)
     resp.client_name = product.client.name if product.client else None
     return resp
+

@@ -158,3 +158,4 @@ def test_batch_auto_serial_generation(client, admin_headers):
     assert len(items) == 5
     assert items[0]["serial_number"] == "TF-RCVOICE-0001"
     assert items[4]["serial_number"] == "TF-RCVOICE-0005"
+

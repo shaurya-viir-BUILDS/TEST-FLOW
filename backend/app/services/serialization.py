@@ -120,3 +120,4 @@ def auto_generate_batch_serials(
     db.commit()
 
     return len(new_items), new_items
+

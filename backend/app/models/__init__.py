@@ -4,6 +4,16 @@ from app.models.attendance import AttendanceRecord, AttendanceStatusEnum, Attend
 from app.models.client import Client
 from app.models.product import ProductModel, ProductCategoryEnum
 from app.models.batch import Batch, BatchItem, BatchStatusEnum, BatchItemStatusEnum
+from app.models.testing import (
+    TestTemplate,
+    TestParameter,
+    TestSession,
+    TestResultDetail,
+    ParameterDataTypeEnum,
+    TestExecutionTypeEnum,
+    TestResultEnum
+)
+from app.models.quality import DefectLog, QADisposition, DefectSeverityEnum, QADecisionEnum
 
 __all__ = [
     "Department",
@@ -19,4 +29,15 @@ __all__ = [
     "BatchItem",
     "BatchStatusEnum",
     "BatchItemStatusEnum",
+    "TestTemplate",
+    "TestParameter",
+    "TestSession",
+    "TestResultDetail",
+    "ParameterDataTypeEnum",
+    "TestExecutionTypeEnum",
+    "TestResultEnum",
+    "DefectLog",
+    "QADisposition",
+    "DefectSeverityEnum",
+    "QADecisionEnum",
 ]

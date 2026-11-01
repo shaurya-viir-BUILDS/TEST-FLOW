@@ -30,3 +30,4 @@ class ProductModel(Base):
     __table_args__ = (
         UniqueConstraint("client_id", "model_number", name="uix_client_model"),
     )
+

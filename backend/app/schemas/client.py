@@ -30,3 +30,4 @@ class ClientResponse(ClientBase):
     total_batches: Optional[int] = 0
 
     model_config = ConfigDict(from_attributes=True)
+

@@ -17,3 +17,4 @@ class Client(Base):
 
     product_models = relationship("ProductModel", back_populates="client", cascade="all, delete-orphan")
     batches = relationship("Batch", back_populates="client")
+

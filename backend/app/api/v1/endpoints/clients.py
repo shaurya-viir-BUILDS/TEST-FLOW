@@ -102,3 +102,4 @@ def update_client(
     resp.total_models = len(client.product_models)
     resp.total_batches = len(client.batches)
     return resp
+

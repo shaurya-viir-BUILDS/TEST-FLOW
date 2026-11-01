@@ -59,3 +59,4 @@ class BatchItem(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     batch = relationship("Batch", back_populates="items")
+

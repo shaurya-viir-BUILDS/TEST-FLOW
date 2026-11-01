@@ -7,7 +7,10 @@ from app.api.v1.endpoints import (
     attendance,
     clients,
     products,
-    batches
+    batches,
+    test_templates,
+    testing,
+    quality
 )
 
 api_router = APIRouter()
@@ -19,4 +22,7 @@ api_router.include_router(attendance.router, prefix="/attendance", tags=["Attend
 api_router.include_router(clients.router, prefix="/clients", tags=["Clients"])
 api_router.include_router(products.router, prefix="/products", tags=["Products"])
 api_router.include_router(batches.router, prefix="/batches", tags=["Batches & Inventory"])
+api_router.include_router(test_templates.router, prefix="/test-templates", tags=["Testing Templates"])
+api_router.include_router(testing.router, prefix="/testing", tags=["Testing Execution"])
+api_router.include_router(quality.router, prefix="/quality", tags=["Quality Assurance & Defects"])
 

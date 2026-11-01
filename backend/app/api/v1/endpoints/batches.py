@@ -181,3 +181,4 @@ def update_batch_status(
     db.commit()
     db.refresh(batch)
     return _enrich_batch_response(batch, db)
+

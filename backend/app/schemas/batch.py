@@ -70,3 +70,4 @@ class BatchItemAutoGenerateRequest(BaseModel):
 class BatchItemStatusUpdate(BaseModel):
     status: BatchItemStatusEnum
     is_defective: Optional[bool] = None
+
