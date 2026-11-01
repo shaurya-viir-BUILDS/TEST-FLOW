@@ -16,6 +16,7 @@ from app.models.testing import (
     TaskAllocationStatusEnum,
 )
 from app.models.quality import DefectLog, QADisposition, DefectSeverityEnum, QADecisionEnum
+from app.models.dispatch import DispatchOrder, DispatchItem, DispatchStatusEnum
 
 __all__ = [
     "Department",
@@ -44,4 +45,7 @@ __all__ = [
     "QADisposition",
     "DefectSeverityEnum",
     "QADecisionEnum",
+    "DispatchOrder",
+    "DispatchItem",
+    "DispatchStatusEnum",
 ]

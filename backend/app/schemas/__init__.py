@@ -54,6 +54,18 @@ from app.schemas.quality import (
     QualityHistoryItemResponse,
     DefectSummaryResponse,
 )
+from app.schemas.dispatch import (
+    DispatchCreate,
+    DispatchResponse,
+    TraceabilityTimelineResponse,
+)
+from app.schemas.dashboard import (
+    DashboardOverviewResponse,
+    TestingDashboardResponse,
+    QualityDashboardResponse,
+    AttendanceReportResponse,
+    OperationalReportResponse,
+)
 
 __all__ = [
     "LoginRequest",
@@ -118,4 +130,12 @@ __all__ = [
     "RetestSubmissionRequest",
     "QualityHistoryItemResponse",
     "DefectSummaryResponse",
+    "DispatchCreate",
+    "DispatchResponse",
+    "TraceabilityTimelineResponse",
+    "DashboardOverviewResponse",
+    "TestingDashboardResponse",
+    "QualityDashboardResponse",
+    "AttendanceReportResponse",
+    "OperationalReportResponse",
 ]
