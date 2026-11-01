@@ -26,6 +26,7 @@ from app.schemas.testing import (
     ParameterDataTypeEnum,
     TestExecutionTypeEnum,
     TestResultEnum,
+    TaskAllocationStatusEnum,
     TestParameterBase,
     TestParameterCreate,
     TestParameterResponse,
@@ -38,6 +39,9 @@ from app.schemas.testing import (
     TestResultDetailResponse,
     TestSessionResponse,
     BenchCsvImportResult,
+    TaskAllocationCreate,
+    TaskAllocationResponse,
+    BatchTestingProgressResponse,
 )
 from app.schemas.quality import (
     DefectSeverityEnum,
@@ -46,6 +50,9 @@ from app.schemas.quality import (
     DefectLogResponse,
     QADispositionCreate,
     QADispositionResponse,
+    RetestSubmissionRequest,
+    QualityHistoryItemResponse,
+    DefectSummaryResponse,
 )
 
 __all__ = [
@@ -86,6 +93,7 @@ __all__ = [
     "ParameterDataTypeEnum",
     "TestExecutionTypeEnum",
     "TestResultEnum",
+    "TaskAllocationStatusEnum",
     "TestParameterBase",
     "TestParameterCreate",
     "TestParameterResponse",
@@ -98,10 +106,16 @@ __all__ = [
     "TestResultDetailResponse",
     "TestSessionResponse",
     "BenchCsvImportResult",
+    "TaskAllocationCreate",
+    "TaskAllocationResponse",
+    "BatchTestingProgressResponse",
     "DefectSeverityEnum",
     "QADecisionEnum",
     "DefectLogCreate",
     "DefectLogResponse",
     "QADispositionCreate",
     "QADispositionResponse",
+    "RetestSubmissionRequest",
+    "QualityHistoryItemResponse",
+    "DefectSummaryResponse",
 ]

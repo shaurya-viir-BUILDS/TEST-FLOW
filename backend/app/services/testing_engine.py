@@ -233,3 +233,4 @@ def parse_bench_csv(
         failed_units=failed,
         failed_serials=failed_items
     )
+

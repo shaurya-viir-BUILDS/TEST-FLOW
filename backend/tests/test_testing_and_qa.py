@@ -23,6 +23,26 @@ def qa_headers(db_session):
 
 
 @pytest.fixture
+def supervisor_headers(db_session):
+    from app.models.employee import Employee, RoleEnum
+    from app.core.security import get_password_hash, create_access_token
+
+    superv = Employee(
+        emp_code="EMP-SUP-99",
+        first_name="Supervisor",
+        last_name="Sam",
+        email="sup@test.com",
+        password_hash=get_password_hash("Password123!"),
+        role=RoleEnum.TEST_SUPERVISOR,
+        is_active=True
+    )
+    db_session.add(superv)
+    db_session.commit()
+    token = create_access_token(subject=superv.id, role=superv.role.value)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
 def test_setup_batch(client, admin_headers):
     # 1. Client
     c_res = client.post("/api/v1/clients/", headers=admin_headers, json={"name": "NetGearX", "code": "NGX"})
@@ -91,6 +111,7 @@ def test_setup_batch(client, admin_headers):
     items = items_res.json()
 
     return {
+        "batch_id": batch_id,
         "template_id": template_id,
         "parameters": params,
         "items": items
@@ -233,3 +254,130 @@ def test_defect_logging_and_qa_disposition_enforcement(client, tech_headers, qa_
     )
     assert disp_approve.status_code == 201
     assert disp_approve.json()["decision"] == "APPROVED"
+
+
+def test_task_allocation_and_technician_queue(client, supervisor_headers, tech_headers, test_setup_batch, db_session):
+    setup = test_setup_batch
+    batch_id = setup["batch_id"]
+
+    # Get technician employee ID
+    from app.models.employee import Employee
+    tech = db_session.query(Employee).filter(Employee.email == "tech@test.com").first()
+
+    # 1. Supervisor allocates batch to technician
+    alloc_res = client.post(
+        "/api/v1/testing/allocate-tasks",
+        headers=supervisor_headers,
+        json={
+            "batch_id": batch_id,
+            "technician_id": tech.id,
+            "notes": "Priority batch for testing"
+        }
+    )
+    assert alloc_res.status_code == 201
+    assert alloc_res.json()["batch_number"] == "BAT-NGX-01"
+
+    # 2. Technician views queue
+    queue_res = client.get("/api/v1/testing/my-queue", headers=tech_headers)
+    assert queue_res.status_code == 200
+    queue = queue_res.json()
+    assert len(queue) >= 1
+    assert queue[0]["batch_number"] == "BAT-NGX-01"
+    assert queue[0]["pending_units_count"] >= 1
+
+
+def test_batch_testing_progress(client, admin_headers, test_setup_batch):
+    setup = test_setup_batch
+    batch_id = setup["batch_id"]
+
+    progress_res = client.get(f"/api/v1/testing/batch-progress/{batch_id}", headers=admin_headers)
+    assert progress_res.status_code == 200
+    p = progress_res.json()
+    assert p["batch_number"] == "BAT-NGX-01"
+    assert p["total_units"] == 3
+    assert "completion_percentage" in p
+
+
+def test_retest_and_quality_history(client, tech_headers, qa_headers, test_setup_batch):
+    setup = test_setup_batch
+    template_id = setup["template_id"]
+    param_power = setup["parameters"][0]["id"]
+    param_led = setup["parameters"][1]["id"]
+    item_id = setup["items"][0]["id"]
+
+    # 1. Unit fails initial test
+    client.post(
+        "/api/v1/testing/manual",
+        headers=tech_headers,
+        json={
+            "batch_item_id": item_id,
+            "template_id": template_id,
+            "results": [
+                {"parameter_id": param_power, "measured_value": "1.0"},
+                {"parameter_id": param_led, "measured_value": "false"}
+            ]
+        }
+    )
+
+    # 2. Log Defect
+    def_res = client.post(
+        "/api/v1/quality/defects",
+        headers=tech_headers,
+        json={
+            "batch_item_id": item_id,
+            "defect_code": "DEF-PWR-DEAD",
+            "severity": "CRITICAL",
+            "description": "Dead power board"
+        }
+    )
+    defect_id = def_res.json()["id"]
+
+    # 3. QA flags for rework
+    client.post(
+        "/api/v1/quality/disposition",
+        headers=qa_headers,
+        json={"batch_item_id": item_id, "decision": "RETEST_REQUESTED", "remarks": "Replace capacitor C12"}
+    )
+
+    # 4. Technician performs Retest with good values
+    retest_res = client.post(
+        "/api/v1/quality/retest",
+        headers=tech_headers,
+        json={
+            "batch_item_id": item_id,
+            "template_id": template_id,
+            "defect_id": defect_id,
+            "results": [
+                {"parameter_id": param_power, "measured_value": "12.0"},
+                {"parameter_id": param_led, "measured_value": "true"}
+            ],
+            "resolution_notes": "Capacitor replaced. Voltage rail stable."
+        }
+    )
+    assert retest_res.status_code == 201
+    assert retest_res.json()["overall_result"] == "PASS"
+    assert retest_res.json()["defect_resolved"] is True
+
+    # 5. QA can now approve the unit
+    approve_res = client.post(
+        "/api/v1/quality/disposition",
+        headers=qa_headers,
+        json={"batch_item_id": item_id, "decision": "APPROVED", "remarks": "Approved after retest"}
+    )
+    assert approve_res.status_code == 201
+    assert approve_res.json()["decision"] == "APPROVED"
+
+    # 6. Check Quality History Timeline
+    hist_res = client.get(f"/api/v1/quality/history/{item_id}", headers=tech_headers)
+    assert hist_res.status_code == 200
+    history = hist_res.json()
+    assert len(history["test_sessions"]) == 2  # initial + retest
+    assert len(history["defect_logs"]) == 1
+    assert history["defect_logs"][0]["is_resolved"] is True
+    assert len(history["dispositions"]) == 2   # rework requested + final approved
+
+    # 7. Check Defect Summary Analytics
+    sum_res = client.get("/api/v1/quality/defect-summary", headers=tech_headers)
+    assert sum_res.status_code == 200
+    summary = sum_res.json()
+    assert summary["resolved_defects"] >= 1

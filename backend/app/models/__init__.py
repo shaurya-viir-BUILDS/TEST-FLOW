@@ -9,9 +9,11 @@ from app.models.testing import (
     TestParameter,
     TestSession,
     TestResultDetail,
+    TestTaskAllocation,
     ParameterDataTypeEnum,
     TestExecutionTypeEnum,
-    TestResultEnum
+    TestResultEnum,
+    TaskAllocationStatusEnum,
 )
 from app.models.quality import DefectLog, QADisposition, DefectSeverityEnum, QADecisionEnum
 
@@ -33,9 +35,11 @@ __all__ = [
     "TestParameter",
     "TestSession",
     "TestResultDetail",
+    "TestTaskAllocation",
     "ParameterDataTypeEnum",
     "TestExecutionTypeEnum",
     "TestResultEnum",
+    "TaskAllocationStatusEnum",
     "DefectLog",
     "QADisposition",
     "DefectSeverityEnum",

@@ -21,6 +21,13 @@ class TestResultEnum(str, enum.Enum):
     FAIL = "FAIL"
 
 
+class TaskAllocationStatusEnum(str, enum.Enum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
 class TestTemplate(Base):
     __tablename__ = "test_templates"
 
@@ -70,7 +77,7 @@ class TestSession(Base):
     template = relationship("TestTemplate")
     technician = relationship("Employee")
     details = relationship("TestResultDetail", back_populates="session", cascade="all, delete-orphan")
-    defects = relationship("DefectLog", back_populates="test_session")
+    defects = relationship("DefectLog", primaryjoin="TestSession.id == DefectLog.test_session_id", back_populates="test_session")
 
 
 class TestResultDetail(Base):
@@ -84,3 +91,22 @@ class TestResultDetail(Base):
 
     session = relationship("TestSession", back_populates="details")
     parameter = relationship("TestParameter")
+
+
+class TestTaskAllocation(Base):
+    __tablename__ = "test_task_allocations"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    batch_id = Column(Integer, ForeignKey("batches.id", ondelete="CASCADE"), nullable=False, index=True)
+    batch_item_id = Column(Integer, ForeignKey("batch_items.id", ondelete="SET NULL"), nullable=True, index=True)
+    technician_id = Column(Integer, ForeignKey("employees.id", ondelete="RESTRICT"), nullable=False, index=True)
+    assigned_by_id = Column(Integer, ForeignKey("employees.id", ondelete="RESTRICT"), nullable=False)
+    status = Column(SQLEnum(TaskAllocationStatusEnum), nullable=False, default=TaskAllocationStatusEnum.PENDING, index=True)
+    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    notes = Column(String(255), nullable=True)
+
+    batch = relationship("Batch")
+    batch_item = relationship("BatchItem")
+    technician = relationship("Employee", foreign_keys=[technician_id])
+    assigned_by = relationship("Employee", foreign_keys=[assigned_by_id])
