@@ -9,6 +9,19 @@ from app.schemas.attendance import (
     ExcelImportResult,
     ExcelRowError,
 )
+from app.schemas.client import ClientBase, ClientCreate, ClientUpdate, ClientResponse
+from app.schemas.product import ProductModelBase, ProductModelCreate, ProductModelUpdate, ProductModelResponse
+from app.schemas.batch import (
+    BatchBase,
+    BatchCreate,
+    BatchUpdate,
+    BatchResponse,
+    BatchDetailResponse,
+    BatchItemResponse,
+    BatchItemBulkImportRequest,
+    BatchItemAutoGenerateRequest,
+    BatchItemStatusUpdate,
+)
 
 __all__ = [
     "LoginRequest",
@@ -28,5 +41,21 @@ __all__ = [
     "AttendanceSummary",
     "ExcelImportResult",
     "ExcelRowError",
+    "ClientBase",
+    "ClientCreate",
+    "ClientUpdate",
+    "ClientResponse",
+    "ProductModelBase",
+    "ProductModelCreate",
+    "ProductModelUpdate",
+    "ProductModelResponse",
+    "BatchBase",
+    "BatchCreate",
+    "BatchUpdate",
+    "BatchResponse",
+    "BatchDetailResponse",
+    "BatchItemResponse",
+    "BatchItemBulkImportRequest",
+    "BatchItemAutoGenerateRequest",
+    "BatchItemStatusUpdate",
 ]
-
