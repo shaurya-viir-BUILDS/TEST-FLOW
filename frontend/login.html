@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — TestFlow Electronics Operations & Quality</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              DEFAULT: '#E7473C',
+              50: '#fef2f2',
+              100: '#fee2e2',
+              200: '#fecaca',
+              300: '#fca5a5',
+              400: '#f87171',
+              500: '#E7473C',
+              600: '#d6382d',
+              700: '#b91c1c',
+            },
+            smoke: {
+              DEFAULT: '#F0F0F0',
+              50: '#FAFAFA',
+              100: '#F5F5F5',
+              200: '#E5E7EB',
+              300: '#D1D5DB',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body class="bg-[#F0F0F0] text-zinc-900 min-h-screen flex flex-col font-sans selection:bg-[#E7473C] selection:text-white antialiased">
+
+  <!-- Top Simple Bar -->
+  <header class="border-b border-zinc-200 bg-white/90 backdrop-blur px-6 py-3.5 shadow-sm">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3 select-none">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E7473C] to-[#b91c1c] p-0.5 shadow-md shadow-[#E7473C]/20 flex items-center justify-center">
+          <div class="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
+            <i data-lucide="cpu" class="w-4 h-4 text-[#E7473C]"></i>
+          </div>
+        </div>
+        <div>
+          <span class="font-extrabold text-lg tracking-tight text-zinc-900">TEST<span class="text-[#E7473C]">FLOW</span></span>
+          <span class="text-[9px] uppercase font-mono tracking-widest text-zinc-500 block font-medium">Electronics Operations</span>
+        </div>
+      </a>
+
+      <a href="/" class="text-xs font-semibold text-zinc-600 hover:text-[#E7473C] transition flex items-center gap-1.5">
+        <span>Console</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-auto">
+      
+      <!-- Left Column: Sign In Form -->
+      <div class="lg:col-span-5 bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 shadow-sm card-smoke">
+        
+        <!-- Header -->
+        <div class="mb-6">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-red-50 text-[#E7473C] text-[11px] font-mono font-bold border border-red-200 mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#E7473C] animate-pulse"></span>
+            SECURE ACCESS
+          </div>
+          <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Sign in to TestFlow</h1>
+          <p class="text-xs text-zinc-500 mt-1">Select an employee role below or enter your credentials.</p>
+        </div>
+
+        <!-- Alert Notification -->
+        <div id="login-alert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium border"></div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label for="email" class="block text-xs font-semibold text-zinc-700 mb-1.5">Email / Authentication ID</label>
+            <div class="relative">
+              <i data-lucide="mail" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3"></i>
+              <input type="text" id="email" required autocomplete="username"
+                placeholder="e.g. emp-syn-001@testflow-demo.local" 
+                class="w-full bg-zinc-50 border border-zinc-300 rounded-lg pl-10 pr-4 py-2.5 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#E7473C] focus:bg-white transition" />
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="password" class="block text-xs font-semibold text-zinc-700">Password</label>
+            </div>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3"></i>
+              <input type="password" id="password" required autocomplete="current-password"
+                placeholder="••••••••••••" 
+                class="w-full bg-zinc-50 border border-zinc-300 rounded-lg pl-10 pr-10 py-2.5 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#E7473C] focus:bg-white transition" />
+              <button type="button" id="toggle-password" class="absolute right-3.5 top-2.5 text-zinc-400 hover:text-zinc-700">
+                <i data-lucide="eye" class="w-4 h-4" id="eye-icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-1">
+            <label class="flex items-center gap-2 cursor-pointer text-zinc-600 select-none">
+              <input type="checkbox" id="remember-me" checked class="rounded border-zinc-300 text-[#E7473C] focus:ring-[#E7473C]" />
+              <span>Remember session</span>
+            </label>
+            <span class="text-[11px] font-mono text-zinc-400">JWT Bearer 24h</span>
+          </div>
+
+          <button type="submit" id="submit-btn" class="w-full btn-red py-2.5 rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition mt-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span id="btn-text">Sign In</span>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-5 border-t border-zinc-100 flex items-center justify-between text-[11px] font-mono text-zinc-400">
+          <span>TestFlow v1.0 Production</span>
+          <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Server Ready
+          </span>
+        </div>
+
+      </div>
+
+      <!-- Right Column: All Roles & Authentication IDs -->
+      <div class="lg:col-span-7 space-y-4">
+        
+        <div class="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm card-smoke">
+          <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+            <div>
+              <h2 class="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <i data-lucide="key-round" class="w-4 h-4 text-[#E7473C]"></i>
+                Role Authentication Credentials
+              </h2>
+              <p class="text-xs text-zinc-500 mt-0.5">Click "1-Click Sign In" on any role to immediately test its permissions.</p>
+            </div>
+            <span class="text-[10px] font-mono uppercase bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-semibold border border-zinc-200">7 Active Roles</span>
+          </div>
+
+          <!-- Roles Grid -->
+          <div class="space-y-2.5" id="roles-list">
+            <!-- Dynamically populated or static -->
+          </div>
+        </div>
+
+        <!-- Info callout -->
+        <div class="bg-red-50/60 border border-red-200/70 rounded-xl p-4 text-xs text-zinc-600 flex items-start gap-3">
+          <i data-lucide="info" class="w-4 h-4 text-[#E7473C] shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="text-zinc-900 font-semibold">Quality & Role Enforcement:</strong>
+            <p class="mt-0.5 text-zinc-500 leading-relaxed">
+              Test technicians execute bench checklists; QA inspectors sign dispositions; store keepers generate outward challans; and operations managers monitor overall first-pass yield.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // All 7 Roles Credential Directory
+    const ROLES_DIRECTORY = [
+      {
+        title: "Operations Manager",
+        role: "OPERATIONS_MGR",
+        badgeColor: "bg-red-50 text-[#E7473C] border-red-200",
+        email: "emp-syn-001@testflow-demo.local",
+        password: "DemoPass123!",
+        name: "Synthetic Manager One",
+        desc: "First-pass yield monitoring, line throughput, and shift analytics."
+      },
+      {
+        title: "QA Inspector",
+        role: "QA_INSPECTOR",
+        badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
+        email: "emp-syn-013@testflow-demo.local",
+        password: "DemoPass123!",
+        name: "Synthetic QA Inspector",
+        desc: "Strict quality gate reviews, defect incident codes, and disposition approvals."
+      },
+      {
+        title: "Store Keeper",
+        role: "STORE_KEEPER",
+        badgeColor: "bg-sky-50 text-sky-700 border-sky-200",
+        email: "emp-syn-014@testflow-demo.local",
+        password: "DemoPass123!",
+        name: "Synthetic Store Keeper",
+        desc: "Inward lot receiving, bay storage allocation, and outbound dispatch challans."
+      },
+      {
+        title: "Test Lead (Supervisor)",
+        role: "TEST_SUPERVISOR",
+        badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
+        email: "emp-syn-005@testflow-demo.local",
+        password: "DemoPass123!",
+        name: "Synthetic Test Lead One",
+        desc: "Batch technician task allocations, checklist templates, and floor coverage."
+      },
+      {
+        title: "Test Tech (Technician)",
+        role: "TEST_TECHNICIAN",
+        badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        email: "emp-syn-007@testflow-demo.local",
+        password: "DemoPass123!",
+        name: "Synthetic Tester 1",
+        desc: "Manual parameter checklist measurements and bench test execution queue."
+      },
+      {
+        title: "Super Admin",
+        role: "SUPER_ADMIN",
+        badgeColor: "bg-zinc-100 text-zinc-900 border-zinc-300 font-bold",
+        email: "admin@testflow.local",
+        password: "Admin123!",
+        name: "Alex Admin",
+        desc: "Full administrative access, user creation, and system configuration."
+      },
+      {
+        title: "HR Officer",
+        role: "HR_OFFICER",
+        badgeColor: "bg-pink-50 text-pink-700 border-pink-200",
+        email: "emp-syn-003@testflow-demo.local",
+        password: "DemoPass123!",
+        name: "Synthetic HR One",
+        desc: "Employee roster management, attendance logging, and shift roll call."
+      }
+    ];
+
+    // Render Roles Table
+    function renderRoles() {
+      const container = document.getElementById('roles-list');
+      if (!container) return;
+
+      container.innerHTML = ROLES_DIRECTORY.map((r, i) => `
+        <div class="p-3.5 bg-zinc-50/70 hover:bg-white rounded-xl border border-zinc-200 hover:border-[#E7473C]/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-zinc-900">${r.title}</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${r.badgeColor}">${r.role}</span>
+            </div>
+            <div class="text-[11px] text-zinc-500">${r.desc}</div>
+            <div class="flex flex-wrap items-center gap-3 pt-0.5 text-[11px] font-mono">
+              <span class="text-zinc-600">ID: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${r.email}</code></span>
+              <span class="text-zinc-600">PW: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${r.password}</code></span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="fillAndLogin('${r.email}', '${r.password}')" 
+              class="btn-red px-3 py-1.5 text-xs rounded-lg font-semibold flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              <span>1-Click Sign In</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Toggle Password Visibility
+    document.getElementById('toggle-password')?.addEventListener('click', () => {
+      const input = document.getElementById('password');
+      const icon = document.getElementById('eye-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-lucide', 'eye');
+      }
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    // Alert helper
+    function showAlert(msg, isSuccess = false) {
+      const alert = document.getElementById('login-alert');
+      alert.className = `mb-4 p-3 rounded-xl text-xs font-medium border ${
+        isSuccess 
+          ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+          : 'bg-red-50 text-[#E7473C] border-red-200'
+      }`;
+      alert.textContent = msg;
+      alert.classList.remove('hidden');
+    }
+
+    // Fill & Submit Form
+    window.fillAndLogin = function(email, password) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = password;
+      document.getElementById('login-form').dispatchEvent(new Event('submit'));
+    };
+
+    // Form Submission
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const submitBtn = document.getElementById('submit-btn');
+      const btnText = document.getElementById('btn-text');
+
+      submitBtn.disabled = true;
+      btnText.textContent = 'Authenticating...';
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Invalid email or password.');
+        }
+
+        // Store JWT token & user info in localStorage
+        localStorage.setItem('tf_token', data.access_token);
+        localStorage.setItem('tf_user', JSON.stringify(data.user));
+
+        showAlert(`Welcome back, ${data.user.first_name}! Redirecting to console...`, true);
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 600);
+
+      } catch (err) {
+        showAlert(err.message, false);
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = 'Sign In';
+      }
+    });
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      renderRoles();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

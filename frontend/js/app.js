@@ -56,19 +56,23 @@ export function closeModal(id) {
 window.closeModal = closeModal;
 window.openModal = openModal;
 
-// Quick login personas (Full name: "Operations Manager")
+// Quick login personas (All 7 Roles Supported)
 const PERSONAS = [
-  { label: 'Operations Manager', email: 'emp-syn-001@testflow-demo.local', role: 'OPERATIONS_MGR' },
-  { label: 'QA Inspector', email: 'emp-syn-013@testflow-demo.local', role: 'QA_INSPECTOR' },
-  { label: 'Store Keeper', email: 'emp-syn-014@testflow-demo.local', role: 'STORE_KEEPER' },
-  { label: 'Test Lead', email: 'emp-syn-005@testflow-demo.local', role: 'TEST_SUPERVISOR' },
-  { label: 'Test Tech', email: 'emp-syn-007@testflow-demo.local', role: 'TEST_TECHNICIAN' },
+  { label: 'Operations Manager', email: 'emp-syn-001@testflow-demo.local', role: 'OPERATIONS_MGR', pass: 'DemoPass123!' },
+  { label: 'QA Inspector', email: 'emp-syn-013@testflow-demo.local', role: 'QA_INSPECTOR', pass: 'DemoPass123!' },
+  { label: 'Store Keeper', email: 'emp-syn-014@testflow-demo.local', role: 'STORE_KEEPER', pass: 'DemoPass123!' },
+  { label: 'Test Lead', email: 'emp-syn-005@testflow-demo.local', role: 'TEST_SUPERVISOR', pass: 'DemoPass123!' },
+  { label: 'Test Tech', email: 'emp-syn-007@testflow-demo.local', role: 'TEST_TECHNICIAN', pass: 'DemoPass123!' },
+  { label: 'Super Admin', email: 'admin@testflow.local', role: 'SUPER_ADMIN', pass: 'Admin123!' },
+  { label: 'HR Officer', email: 'emp-syn-003@testflow-demo.local', role: 'HR_OFFICER', pass: 'DemoPass123!' },
 ];
 
-export async function loginAs(email) {
+export async function loginAs(email, password = 'DemoPass123!') {
   try {
+    const persona = PERSONAS.find(p => p.email === email);
+    const pass = persona ? persona.pass : password;
     showToast(`Activating persona...`, 'info');
-    await api.login(email, 'DemoPass123!');
+    await api.login(email, pass);
     showToast('Persona activated successfully!', 'success');
     renderUserBar();
     loadCurrentTab();
@@ -117,14 +121,14 @@ function renderUserBar() {
       document.getElementById('logout-btn')?.addEventListener('click', () => {
         api.logout();
         showToast('Signed out', 'info');
-        renderUserBar();
-        loadCurrentTab();
+        window.location.href = '/login';
       });
     } else {
       userContainer.innerHTML = `
-        <button onclick="loginAs('emp-syn-001@testflow-demo.local')" class="btn-red text-xs px-4 py-2 rounded-lg font-semibold shadow-sm">
-          Sign In
-        </button>
+        <a href="/login" class="btn-red text-xs px-3.5 py-1.5 rounded-lg font-semibold shadow-sm flex items-center gap-1.5">
+          <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+          <span>Sign In</span>
+        </a>
       `;
     }
   }

@@ -53,6 +53,14 @@ def root():
     }
 
 
+@app.get("/login", tags=["Web Console"])
+def login_page():
+    login_file = FRONTEND_DIR / "login.html"
+    if login_file.exists():
+        return FileResponse(login_file)
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "healthy"}
