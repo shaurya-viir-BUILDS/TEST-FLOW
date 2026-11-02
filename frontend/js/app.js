@@ -39,22 +39,74 @@ export function showToast(message, type = 'info') {
 // Modal helper
 export function openModal(id) {
   const modal = document.getElementById(id);
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    if (window.lucide) window.lucide.createIcons();
-  }
+  if (!modal) return;
+  modal._returnFocus = document.activeElement;
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  modal.setAttribute('aria-hidden', 'false');
+  if (window.lucide) window.lucide.createIcons();
+  const focusable = modal.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length) focusable[0].focus();
 }
 
 export function closeModal(id) {
   const modal = document.getElementById(id);
-  if (modal) {
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  modal.setAttribute('aria-hidden', 'true');
+  if (modal._returnFocus && typeof modal._returnFocus.focus === 'function') {
+    modal._returnFocus.focus();
   }
 }
 window.closeModal = closeModal;
 window.openModal = openModal;
+
+// Close any open dialog on Escape, and on backdrop click
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.fixed.inset-0.z-50.flex').forEach(m => closeModal(m.id));
+    closeSidebar();
+  }
+});
+document.querySelectorAll('.fixed.inset-0.z-50').forEach(modal => {
+  modal.addEventListener('mousedown', (e) => {
+    if (e.target === modal) closeModal(modal.id);
+  });
+});
+
+// Responsive sidebar drawer (small screens)
+export function openSidebar() {
+  document.getElementById('sidebar')?.classList.add('tf-sidebar-open');
+  document.getElementById('sidebar-scrim')?.classList.add('tf-scrim-open');
+  document.getElementById('sidebar-toggle')?.setAttribute('aria-expanded', 'true');
+}
+
+export function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('tf-sidebar-open');
+  document.getElementById('sidebar-scrim')?.classList.remove('tf-scrim-open');
+  document.getElementById('sidebar-toggle')?.setAttribute('aria-expanded', 'false');
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar?.classList.contains('tf-sidebar-open')) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+window.openSidebar = openSidebar;
+window.closeSidebar = closeSidebar;
+
+document.getElementById('sidebar-toggle')?.addEventListener('click', toggleSidebar);
+document.getElementById('sidebar-close')?.addEventListener('click', closeSidebar);
+document.getElementById('sidebar-scrim')?.addEventListener('click', closeSidebar);
+
+// Keep the header user bar in sync with auth changes (login / logout / 401)
+window.addEventListener('auth-changed', () => {
+  renderUserBar();
+});
 
 // Quick login personas (All 7 Roles Supported)
 const PERSONAS = [
@@ -141,6 +193,11 @@ export function switchTab(tab) {
   document.querySelectorAll('.nav-tab-item').forEach(el => {
     const isActive = el.getAttribute('data-tab') === tab;
     el.classList.toggle('nav-tab-active', isActive);
+    if (isActive) {
+      el.setAttribute('aria-current', 'page');
+    } else {
+      el.removeAttribute('aria-current');
+    }
   });
 
   document.querySelectorAll('.tab-content').forEach(el => {
@@ -154,6 +211,7 @@ export function switchTab(tab) {
   });
 
   loadCurrentTab();
+  closeSidebar();
   if (window.lucide) window.lucide.createIcons();
 }
 window.switchTab = switchTab;
@@ -286,15 +344,17 @@ async function loadWorkbench() {
     return;
   }
 
-  container.innerHTML = `<div class="p-8 text-center text-zinc-400 font-mono text-xs">Loading queue...</div>`;
+  container.innerHTML = `<div class="bg-white rounded-xl border border-zinc-200 shadow-sm"><div class="tf-loading"><span class="tf-spinner"></span><span>Loading assigned test queue...</span></div></div>`;
   try {
     const queue = await api.getMyQueue();
     if (!queue || queue.length === 0) {
       container.innerHTML = `
-        <div class="p-10 text-center text-zinc-400 bg-white rounded-xl border border-zinc-200 shadow-sm">
-          <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-zinc-400"></i>
-          <p class="text-sm text-zinc-700 font-medium">No active units allocated to your queue.</p>
-          <p class="text-xs text-zinc-500 mt-1">Switch to Test Lead (EMP-SYN-005) to allocate new batches or units.</p>
+        <div class="bg-white rounded-xl border border-zinc-200 shadow-sm">
+          <div class="tf-empty">
+            <i data-lucide="inbox" class="w-8 h-8"></i>
+            <p class="tf-empty-title">No active units allocated to your queue</p>
+            <p class="tf-empty-text">Switch to Test Lead (EMP-SYN-005) to allocate new batches or units for testing.</p>
+          </div>
         </div>
       `;
       if (window.lucide) window.lucide.createIcons();
@@ -302,7 +362,7 @@ async function loadWorkbench() {
     }
 
     container.innerHTML = queue.map(group => `
-      <div class="bg-white border border-zinc-200 rounded-xl p-5 mb-4 shadow-sm card-smoke">
+      <div class="bg-white border border-zinc-200 rounded-xl p-5 mb-4 shadow-sm card-smoke card-static">
         <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
           <div>
             <span class="text-xs uppercase font-mono px-2.5 py-0.5 rounded bg-red-50 text-[#E7473C] border border-red-200 font-bold mr-2">
@@ -359,13 +419,20 @@ export async function openTestModal(unitId, serialNumber) {
   document.getElementById('test-modal-serial').textContent = serialNumber;
 
   const container = document.getElementById('test-modal-params');
-  container.innerHTML = '<div class="text-center p-4 text-xs text-zinc-400 font-mono">Fetching template criteria...</div>';
+  container.innerHTML = '<div class="tf-loading"><span class="tf-spinner"></span><span>Fetching template criteria...</span></div>';
   openModal('test-execution-modal');
 
   try {
     const templates = await api.getTestTemplates();
     if (!templates || templates.length === 0) {
-      container.innerHTML = '<div class="text-[#E7473C] text-xs">No active test template found.</div>';
+      container.innerHTML = `
+        <div class="tf-empty">
+          <i data-lucide="file-warning" class="w-7 h-7"></i>
+          <p class="tf-empty-title">No active test template found</p>
+          <p class="tf-empty-text">Ask a supervisor to publish a test template before executing checklist runs.</p>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
@@ -377,21 +444,22 @@ export async function openTestModal(unitId, serialNumber) {
       <div class="space-y-3">
         ${templateDetail.parameters.map(p => `
           <div class="bg-zinc-50 p-3 rounded-lg border border-zinc-200 text-xs">
-            <div class="flex justify-between mb-1.5 font-medium text-zinc-900">
-              <span>${p.parameter_name} ${p.is_mandatory ? '<span class="text-[#E7473C] font-bold">*</span>' : ''}</span>
-              <span class="text-zinc-500 font-mono text-[11px]">
+            <div class="flex justify-between gap-2 mb-1.5 font-medium text-zinc-900">
+              <span>${p.parameter_name} ${p.is_mandatory ? '<span class="text-[#E7473C] font-bold" title="Required">*</span>' : ''}</span>
+              <span class="text-zinc-500 font-mono text-[11px] shrink-0">
                 ${p.data_type === 'NUMERIC_RANGE' ? `[${p.min_limit} - ${p.max_limit} ${p.unit_of_measure || ''}]` : p.data_type}
               </span>
             </div>
             ${p.data_type === 'BOOLEAN' ? `
-              <select id="param-${p.id}" class="w-full bg-white border border-zinc-300 rounded-md px-2.5 py-1.5 text-zinc-900 text-xs focus:border-[#E7473C] focus:outline-none">
+              <select id="param-${p.id}" class="tf-select" aria-required="${p.is_mandatory ? 'true' : 'false'}" data-mandatory="${p.is_mandatory ? 'true' : 'false'}">
                 <option value="true">True / Pass</option>
                 <option value="false">False / Fail</option>
               </select>
             ` : `
-              <input type="text" id="param-${p.id}" placeholder="Measured value..." 
-                class="w-full bg-white border border-zinc-300 rounded-md px-2.5 py-1.5 text-zinc-900 font-mono text-xs focus:border-[#E7473C] focus:outline-none transition" />
+              <input type="text" id="param-${p.id}" placeholder="Measured value..." autocomplete="off"
+                class="tf-input tf-input--mono" aria-required="${p.is_mandatory ? 'true' : 'false'}" data-mandatory="${p.is_mandatory ? 'true' : 'false'}" />
             `}
+            <p class="tf-field-error hidden" data-error-for="param-${p.id}"></p>
           </div>
         `).join('')}
       </div>
@@ -405,15 +473,47 @@ window.openTestModal = openTestModal;
 export async function submitActiveTest() {
   if (!activeTestingUnit || !activeTemplate) return;
 
+  // Clear previous validation state
+  document.querySelectorAll('#test-modal-params [data-error-for]').forEach(el => {
+    el.classList.add('hidden');
+    el.textContent = '';
+  });
+  document.querySelectorAll('#test-modal-params [aria-invalid="true"]').forEach(el => el.removeAttribute('aria-invalid'));
+
   const results = [];
+  let firstInvalid = null;
+
   for (const p of activeTemplate.parameters) {
     const input = document.getElementById(`param-${p.id}`);
-    if (input) {
-      results.push({
-        parameter_id: p.id,
-        measured_value: input.value.trim()
-      });
+    if (!input) continue;
+    const value = (input.value || '').trim();
+
+    if (p.is_mandatory && value === '') {
+      input.setAttribute('aria-invalid', 'true');
+      const errEl = document.querySelector(`[data-error-for="param-${p.id}"]`);
+      if (errEl) {
+        errEl.textContent = 'This measurement is required.';
+        errEl.classList.remove('hidden');
+      }
+      if (!firstInvalid) firstInvalid = input;
     }
+
+    results.push({
+      parameter_id: p.id,
+      measured_value: value
+    });
+  }
+
+  if (firstInvalid) {
+    showToast('Please complete all mandatory measurements before submitting.', 'warning');
+    firstInvalid.focus();
+    return;
+  }
+
+  const submitBtn = document.querySelector('#test-execution-modal button[onclick="submitActiveTest()"]');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
   }
 
   try {
@@ -433,6 +533,11 @@ export async function submitActiveTest() {
     loadWorkbench();
   } catch (err) {
     showToast(`Test submission rejected: ${err.message}`, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Measurements';
+    }
   }
 }
 window.submitActiveTest = submitActiveTest;
@@ -444,11 +549,19 @@ async function loadQuality() {
   const container = document.getElementById('quality-defects-table');
   if (!container) return;
 
-  container.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-zinc-400 font-mono text-xs">Loading defect logs...</td></tr>`;
+  container.innerHTML = `<tr><td colspan="6"><div class="tf-loading"><span class="tf-spinner"></span><span>Loading defect logs...</span></div></td></tr>`;
   try {
     const defects = await api.getDefects();
     if (!defects || defects.length === 0) {
-      container.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-zinc-500">No defect records logged. Clean quality run!</td></tr>`;
+      container.innerHTML = `
+        <tr><td colspan="6">
+          <div class="tf-empty">
+            <i data-lucide="badge-check" class="w-8 h-8"></i>
+            <p class="tf-empty-title">No defect records logged</p>
+            <p class="tf-empty-text">Clean quality run — nothing currently requires QA disposition.</p>
+          </div>
+        </td></tr>`;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
@@ -478,9 +591,21 @@ async function loadQuality() {
       </tr>
     `).join('');
   } catch (err) {
-    container.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-[#E7473C]">Error: ${err.message}</td></tr>`;
+    container.innerHTML = `
+      <tr>
+        <td colspan="6" class="p-8 text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <span class="text-[#E7473C] text-xs font-mono font-semibold">Error: ${err.message}</span>
+            <button onclick="loadQuality()" class="tf-btn tf-btn-secondary tf-btn-sm">
+              ↻ Retry Loading Defects
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 }
+window.loadQuality = loadQuality;
 
 let activeDispositionItem = null;
 export function openDispositionModal(itemId, serial) {
@@ -512,11 +637,19 @@ async function loadBatches() {
   const container = document.getElementById('batches-list-table');
   if (!container) return;
 
-  container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-zinc-400 font-mono text-xs">Loading batches...</td></tr>`;
+  container.innerHTML = `<tr><td colspan="7"><div class="tf-loading"><span class="tf-spinner"></span><span>Loading batches...</span></div></td></tr>`;
   try {
     const batches = await api.getBatches();
     if (!batches || batches.length === 0) {
-      container.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-zinc-500">No batches registered.</td></tr>`;
+      container.innerHTML = `
+        <tr><td colspan="7">
+          <div class="tf-empty">
+            <i data-lucide="package-open" class="w-8 h-8"></i>
+            <p class="tf-empty-title">No batches registered</p>
+            <p class="tf-empty-text">Inward lots will appear here once received by the store keeper.</p>
+          </div>
+        </td></tr>`;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
@@ -560,7 +693,7 @@ async function loadBatches() {
 export async function viewBatchProgress(batchId) {
   openModal('batch-progress-modal');
   const content = document.getElementById('batch-progress-content');
-  content.innerHTML = '<div class="p-4 text-center text-xs text-zinc-400 font-mono">Calculating batch analytics...</div>';
+  content.innerHTML = '<div class="tf-loading"><span class="tf-spinner"></span><span>Calculating batch analytics...</span></div>';
 
   try {
     const prog = await api.getBatchProgress(batchId);
@@ -620,11 +753,19 @@ async function loadDispatch() {
   const container = document.getElementById('dispatch-orders-table');
   if (!container) return;
 
-  container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-zinc-400 font-mono text-xs">Loading dispatches...</td></tr>`;
+  container.innerHTML = `<tr><td colspan="7"><div class="tf-loading"><span class="tf-spinner"></span><span>Loading dispatches...</span></div></td></tr>`;
   try {
     const dispatches = await api.getDispatches();
     if (!dispatches || dispatches.length === 0) {
-      container.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-zinc-500">No dispatch orders created yet.</td></tr>`;
+      container.innerHTML = `
+        <tr><td colspan="7">
+          <div class="tf-empty">
+            <i data-lucide="truck" class="w-8 h-8"></i>
+            <p class="tf-empty-title">No dispatch orders created yet</p>
+            <p class="tf-empty-text">Outbound challans appear here once QA-approved units are packed.</p>
+          </div>
+        </td></tr>`;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 
@@ -680,12 +821,12 @@ export async function performTraceabilityQuery(serial = null) {
   }
 
   const resultContainer = document.getElementById('traceability-results');
-  resultContainer.innerHTML = '<div class="p-8 text-center text-zinc-500 font-mono text-xs">Searching digital birth certificate for ' + query + '...</div>';
+  resultContainer.innerHTML = `<div class="bg-white rounded-xl border border-zinc-200 shadow-sm"><div class="tf-loading"><span class="tf-spinner"></span><span>Searching digital birth certificate for ${query}...</span></div></div>`;
 
   try {
     const trace = await api.getTraceability(query);
     resultContainer.innerHTML = `
-      <div class="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm card-smoke">
+      <div class="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm card-smoke card-static">
         <!-- Certificate Header -->
         <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-200 pb-4 mb-6">
           <div>
@@ -799,7 +940,7 @@ async function loadAttendance() {
   const container = document.getElementById('attendance-records-list');
   if (!container) return;
 
-  container.innerHTML = '<div class="p-4 text-center text-zinc-400 font-mono text-xs">Loading attendance roll call...</div>';
+  container.innerHTML = '<div class="tf-loading"><span class="tf-spinner"></span><span>Loading attendance roll call...</span></div>';
   try {
     const today = await api.getTodayAttendance();
     document.getElementById('att-present-count').textContent = today.present_count || today.present || 0;
@@ -808,7 +949,13 @@ async function loadAttendance() {
 
     const records = today.records || [];
     if (records.length === 0) {
-      container.innerHTML = '<div class="p-6 text-center text-zinc-500 text-xs">No attendance punches recorded today yet. Use the buttons above to punch in.</div>';
+      container.innerHTML = `
+        <div class="tf-empty">
+          <i data-lucide="user-check" class="w-8 h-8"></i>
+          <p class="tf-empty-title">No attendance punches recorded today</p>
+          <p class="tf-empty-text">Use the Punch In / Punch Out buttons above to record floor check-ins.</p>
+        </div>`;
+      if (window.lucide) window.lucide.createIcons();
       return;
     }
 

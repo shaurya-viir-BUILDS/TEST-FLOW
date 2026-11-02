@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sign in to the TestFlow electronics operations and quality console." />
+  <meta name="theme-color" content="#E7473C" />
   <title>Sign In — TestFlow Electronics Operations & Quality</title>
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
@@ -92,7 +94,7 @@
         </div>
 
         <!-- Alert Notification -->
-        <div id="login-alert" class="hidden mb-4 p-3 rounded-xl text-xs font-medium border"></div>
+        <div id="login-alert" role="alert" aria-live="assertive" class="hidden mb-4 p-3 rounded-xl text-xs font-medium border"></div>
 
         <!-- Login Form -->
         <form id="login-form" class="space-y-4">
@@ -102,7 +104,7 @@
               <i data-lucide="mail" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3"></i>
               <input type="text" id="email" required autocomplete="username"
                 placeholder="e.g. emp-syn-001@testflow-demo.local" 
-                class="w-full bg-zinc-50 border border-zinc-300 rounded-lg pl-10 pr-4 py-2.5 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#E7473C] focus:bg-white transition" />
+                class="tf-input tf-input--mono pl-10 pr-4 py-2.5 text-xs" />
             </div>
           </div>
 
@@ -114,8 +116,8 @@
               <i data-lucide="lock" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3"></i>
               <input type="password" id="password" required autocomplete="current-password"
                 placeholder="••••••••••••" 
-                class="w-full bg-zinc-50 border border-zinc-300 rounded-lg pl-10 pr-10 py-2.5 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#E7473C] focus:bg-white transition" />
-              <button type="button" id="toggle-password" class="absolute right-3.5 top-2.5 text-zinc-400 hover:text-zinc-700">
+                class="tf-input tf-input--mono pl-10 pr-10 py-2.5 text-xs" />
+              <button type="button" id="toggle-password" aria-label="Toggle password visibility" class="absolute right-3.5 top-2.5 text-zinc-400 hover:text-zinc-700">
                 <i data-lucide="eye" class="w-4 h-4" id="eye-icon"></i>
               </button>
             </div>
@@ -129,7 +131,7 @@
             <span class="text-[11px] font-mono text-zinc-400">JWT Bearer 24h</span>
           </div>
 
-          <button type="submit" id="submit-btn" class="w-full btn-red py-2.5 rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition mt-2">
+          <button type="submit" id="submit-btn" class="tf-btn tf-btn-primary w-full mt-2">
             <i data-lucide="log-in" class="w-4 h-4"></i>
             <span id="btn-text">Sign In</span>
           </button>
@@ -271,7 +273,7 @@
 
           <div class="flex items-center gap-2 shrink-0">
             <button onclick="fillAndLogin('${r.email}', '${r.password}')" 
-              class="btn-red px-3 py-1.5 text-xs rounded-lg font-semibold flex items-center gap-1.5 shadow-sm">
+              class="tf-btn tf-btn-primary tf-btn-sm shrink-0">
               <i data-lucide="zap" class="w-3.5 h-3.5"></i>
               <span>1-Click Sign In</span>
             </button>
