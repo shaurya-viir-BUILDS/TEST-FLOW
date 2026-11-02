@@ -3,7 +3,10 @@
 A responsive, high-performance web console for the TestFlow Electronics Testing, QA & Traceability Platform.
 
 ## Features
-- **Role-Based Persona Switcher**: Instant 1-click authentication as Operations Manager, QA Inspector, Store Keeper, Test Lead, or Test Technician.
+- **Design System & Theme**: High-precision White Smoke (`#F0F0F0`) and Bright Red (`#E7473C`) industrial palette with design tokens, component classes (`.tf-btn`, `.tf-input`, `.tf-table`, `.tf-kpi`), and accessible keyboard focus outlines.
+- **Dedicated Sign-In Page**: Accessible at `/login` with full authentication credential directory and 1-click login for all 7 platform roles.
+- **Responsive Mobile Navigation**: Slide-over drawer with hamburger button, backdrop scrim, and keyboard escape dismiss.
+- **Role-Based Persona Switcher**: Instant 1-click authentication as Operations Manager, QA Inspector, Store Keeper, Test Lead, Test Technician, Super Admin, or HR Officer.
 - **Operations & Yield Dashboard**: Real-time First-Pass Yield (FPY) rates, test outcome doughnut distribution, and top defect Pareto bar charts using Chart.js.
 - **Technician Testing Workbench**: Live assigned queues with automated tolerance checklist runners for manual inspection and automated bench CSV ingestion.
 - **Quality Assurance & Disposition Flow**: Active defect incident tracking with QA disposition sign-offs (APPROVE, RETEST, SCRAP) enforcing strict quality gates.
