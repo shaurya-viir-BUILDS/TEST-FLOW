@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TestFlow — Integrated Electronics Testing, QA & Traceability Console</title>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons & Chart.js -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-auto"></div>
+
+  <!-- Top App Navigation -->
+  <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-3">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i data-lucide="cpu" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-lg tracking-tight text-white">TestFlow</span>
+            <span class="px-2 py-0.5 text-[10px] font-mono bg-indigo-900/50 text-indigo-300 border border-indigo-700/60 rounded">v1.0-PROD</span>
+          </div>
+          <div class="text-[11px] text-slate-400">Electronics QA, Testing & Traceability Platform</div>
+        </div>
+      </div>
+
+      <!-- Quick Persona Switcher -->
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-medium text-slate-400 hidden xl:inline">1-Click Persona:</span>
+        <div id="persona-buttons" class="flex flex-wrap items-center gap-1.5">
+          <!-- Rendered by app.js -->
+        </div>
+      </div>
+
+      <!-- User Profile & Status -->
+      <div class="flex items-center gap-4">
+        <div class="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2.5 py-1 rounded-full">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>API Connected</span>
+        </div>
+        <div id="user-profile-widget">
+          <!-- Rendered by app.js -->
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 border-r border-slate-800 bg-slate-900/40 p-4 flex flex-col gap-1 shrink-0 overflow-y-auto">
+      <div class="text-[11px] font-mono uppercase text-slate-400 tracking-wider px-3 mb-2">Core Modules</div>
+
+      <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition bg-slate-800 text-white">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 text-indigo-400"></i>
+        <span>Dashboard</span>
+      </button>
+
+      <button onclick="switchTab('workbench')" data-tab="workbench" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+        <i data-lucide="check-square" class="w-4 h-4 text-emerald-400"></i>
+        <span>Testing Workbench</span>
+      </button>
+
+      <button onclick="switchTab('quality')" data-tab="quality" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i>
+        <span>Quality & Defects</span>
+      </button>
+
+      <button onclick="switchTab('batches')" data-tab="batches" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+        <i data-lucide="boxes" class="w-4 h-4 text-indigo-400"></i>
+        <span>Batches & Serials</span>
+      </button>
+
+      <button onclick="switchTab('dispatch')" data-tab="dispatch" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+        <i data-lucide="truck" class="w-4 h-4 text-sky-400"></i>
+        <span>Outbound Dispatch</span>
+      </button>
+
+      <button onclick="switchTab('traceability')" data-tab="traceability" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+        <i data-lucide="search-code" class="w-4 h-4 text-purple-400"></i>
+        <span>Traceability Query</span>
+      </button>
+
+      <button onclick="switchTab('attendance')" data-tab="attendance" class="nav-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+        <i data-lucide="users" class="w-4 h-4 text-pink-400"></i>
+        <span>HR & Attendance</span>
+      </button>
+
+      <div class="mt-auto pt-4 border-t border-slate-800 text-xs text-slate-400">
+        <div class="px-3 py-2 bg-slate-900/80 rounded-lg border border-slate-800/80">
+          <div class="text-slate-400">Backend API Docs</div>
+          <div class="mt-1 flex gap-2">
+            <a href="/docs" target="_blank" class="text-indigo-400 hover:underline">Swagger UI ↗</a>
+            <span class="text-slate-600">•</span>
+            <a href="/redoc" target="_blank" class="text-indigo-400 hover:underline">ReDoc ↗</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
+
+      <!-- ========================================================= -->
+      <!-- TAB 1: DASHBOARD -->
+      <!-- ========================================================= -->
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Operations & Yield Overview</h1>
+          <p class="text-xs text-slate-400 mt-1">Real-time electronics testing throughput, quality yield, and floor metrics.</p>
+        </div>
+
+        <!-- KPI Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">First-Pass Yield</div>
+            <div id="kpi-yield" class="text-2xl font-mono font-bold text-emerald-400 mt-1">--%</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Tested Units</div>
+            <div id="kpi-tested" class="text-2xl font-mono font-bold text-white mt-1">--</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Passed Units</div>
+            <div id="kpi-passed" class="text-2xl font-mono font-bold text-indigo-400 mt-1">--</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Failed Units</div>
+            <div id="kpi-failed" class="text-2xl font-mono font-bold text-rose-400 mt-1">--</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Total Defects</div>
+            <div id="kpi-defects" class="text-2xl font-mono font-bold text-amber-400 mt-1">--</div>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Shift Attendance</div>
+            <div id="kpi-attendance" class="text-2xl font-mono font-bold text-sky-400 mt-1">--%</div>
+          </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-400"></i>
+              Testing Outcome Distribution
+            </h3>
+            <div class="h-64 relative">
+              <canvas id="yield-chart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
+              Top Defect Categories (Pareto Breakdown)
+            </h3>
+            <div class="h-64 relative">
+              <canvas id="pareto-chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Launchers -->
+        <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl p-5">
+          <h3 class="text-xs uppercase font-mono tracking-wider text-slate-400 mb-3">Quick Navigation Shortcuts</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button onclick="switchTab('workbench')" class="p-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-left transition flex items-center justify-between">
+              <div>
+                <div class="text-xs font-semibold text-white">Technician Test Queue</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Execute checks on allocated units</div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+            </button>
+            <button onclick="switchTab('quality')" class="p-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-left transition flex items-center justify-between">
+              <div>
+                <div class="text-xs font-semibold text-white">QA Dispositions</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Sign-off passed units or route retests</div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+            </button>
+            <button onclick="switchTab('traceability')" class="p-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-left transition flex items-center justify-between">
+              <div>
+                <div class="text-xs font-semibold text-white">Digital Birth Certificate</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Universal serial number audit search</div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 2: TESTING WORKBENCH -->
+      <!-- ========================================================= -->
+      <section id="tab-workbench" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Technician Testing Workbench</h1>
+            <p class="text-xs text-slate-400 mt-1">Manual parameter checklists and automated bench CSV test execution.</p>
+          </div>
+        </div>
+
+        <!-- Assigned Tasks & Queue -->
+        <div id="workbench-queue-list">
+          <!-- Loaded dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 3: QUALITY ASSURANCE -->
+      <!-- ========================================================= -->
+      <section id="tab-quality" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Quality Assurance & Defect Management</h1>
+            <p class="text-xs text-slate-400 mt-1">Review test exceptions, log defect codes, and execute QA inspector sign-offs.</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+            <h3 class="text-sm font-semibold text-white">Active Defect Incident Log</h3>
+            <span class="text-xs text-slate-400">Requires QA Inspector role to submit disposition</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-slate-800/50 text-[11px] text-slate-400 font-mono uppercase">
+                <tr>
+                  <th class="p-3">Serial Number</th>
+                  <th class="p-3">Defect Code</th>
+                  <th class="p-3">Severity</th>
+                  <th class="p-3">Description</th>
+                  <th class="p-3">Resolution</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="quality-defects-table">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 4: BATCHES & INVENTORY -->
+      <!-- ========================================================= -->
+      <section id="tab-batches" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Batches & Serialization Master</h1>
+            <p class="text-xs text-slate-400 mt-1">Inward lot tracking, client OEM product models, and serial registration.</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+            <h3 class="text-sm font-semibold text-white">Inward Received Lots</h3>
+            <span class="text-xs font-mono text-slate-400">FastAPI Module 3</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-slate-800/50 text-[11px] text-slate-400 font-mono uppercase">
+                <tr>
+                  <th class="p-3">Batch Number</th>
+                  <th class="p-3">Client</th>
+                  <th class="p-3">Model</th>
+                  <th class="p-3 text-center">Received Qty</th>
+                  <th class="p-3 text-center">Passed</th>
+                  <th class="p-3 text-center">Lifecycle Status</th>
+                  <th class="p-3 text-right">Progress</th>
+                </tr>
+              </thead>
+              <tbody id="batches-list-table">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 5: OUTBOUND DISPATCH -->
+      <!-- ========================================================= -->
+      <section id="tab-dispatch" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Outbound Dispatch & Challans</h1>
+            <p class="text-xs text-slate-400 mt-1">Enforces strict quality gate rules: only QA_APPROVED units may be dispatched.</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+          <div class="p-4 border-b border-slate-800">
+            <h3 class="text-sm font-semibold text-white">Dispatch Challan Registry</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead class="bg-slate-800/50 text-[11px] text-slate-400 font-mono uppercase">
+                <tr>
+                  <th class="p-3">Dispatch Code</th>
+                  <th class="p-3">Batch</th>
+                  <th class="p-3">Client</th>
+                  <th class="p-3 text-center">Total Units</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Carrier</th>
+                  <th class="p-3">Dispatch Date</th>
+                </tr>
+              </thead>
+              <tbody id="dispatch-orders-table">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 6: UNIVERSAL TRACEABILITY QUERY -->
+      <!-- ========================================================= -->
+      <section id="tab-traceability" class="tab-content hidden space-y-6">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Universal Traceability Query</h1>
+          <p class="text-xs text-slate-400 mt-1">Digital birth-to-dispatch certificate auditing every parameter and QA event.</p>
+        </div>
+
+        <!-- Search Card -->
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+              <input id="traceability-input" type="text" placeholder="Enter Serial Number (e.g. SYN-TF-0017)..." 
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-4 py-2.5 text-sm font-mono text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500">
+            </div>
+            <button onclick="performTraceabilityQuery()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm rounded-lg shadow flex items-center justify-center gap-2">
+              <i data-lucide="shield-check" class="w-4 h-4"></i> Query Timeline
+            </button>
+          </div>
+
+          <!-- Quick Test Serials -->
+          <div class="flex items-center gap-2 mt-3 text-xs text-slate-400">
+            <span>Try sample serials:</span>
+            <button onclick="performTraceabilityQuery('SYN-TF-0017')" class="font-mono text-indigo-400 hover:underline">SYN-TF-0017</button>
+            <span>•</span>
+            <button onclick="performTraceabilityQuery('SYN-TF-0001')" class="font-mono text-indigo-400 hover:underline">SYN-TF-0001</button>
+            <span>•</span>
+            <button onclick="performTraceabilityQuery('SYN-TF-0033')" class="font-mono text-indigo-400 hover:underline">SYN-TF-0033</button>
+          </div>
+        </div>
+
+        <!-- Results Timeline Container -->
+        <div id="traceability-results">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 7: HR & SHIFT ATTENDANCE -->
+      <!-- ========================================================= -->
+      <section id="tab-attendance" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">HR & Shift Attendance</h1>
+            <p class="text-xs text-slate-400 mt-1">Biometric punch-in/out records and technician floor coverage.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="handlePunch('in')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-semibold shadow">
+              Punch In (Check-in)
+            </button>
+            <button onclick="handlePunch('out')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded text-xs font-semibold">
+              Punch Out (Check-out)
+            </button>
+          </div>
+        </div>
+
+        <!-- Attendance Stats -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] text-slate-400 uppercase">Present Today</div>
+            <div id="att-present-count" class="text-2xl font-mono font-bold text-emerald-400 mt-1">--</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] text-slate-400 uppercase">Absent / Leave</div>
+            <div id="att-absent-count" class="text-2xl font-mono font-bold text-rose-400 mt-1">--</div>
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <div class="text-[11px] text-slate-400 uppercase">Coverage Rate</div>
+            <div id="att-rate" class="text-2xl font-mono font-bold text-sky-400 mt-1">--%</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <h3 class="text-sm font-semibold text-white mb-3">Today's Shift Roll Call</h3>
+          <div id="attendance-records-list" class="space-y-2">
+            <!-- Dynamic roll call -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODALS -->
+  <!-- ========================================================= -->
+
+  <!-- 1. Test Execution Runner Modal -->
+  <div id="test-execution-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-white">Manual Test Execution</h3>
+          <div class="text-xs text-slate-400">Serial Unit: <span id="test-modal-serial" class="font-mono font-bold text-indigo-400"></span></div>
+        </div>
+        <button onclick="closeModal('test-execution-modal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div id="test-modal-params">
+        <!-- Loaded dynamically -->
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+        <button onclick="closeModal('test-execution-modal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded font-medium">Cancel</button>
+        <button onclick="submitActiveTest()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded font-semibold shadow">
+          Submit Measurements
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. QA Disposition Modal -->
+  <div id="qa-disposition-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-white">Submit QA Disposition</h3>
+          <div class="text-xs text-slate-400">Unit: <span id="disp-modal-serial" class="font-mono font-bold text-indigo-400"></span></div>
+        </div>
+        <button onclick="closeModal('qa-disposition-modal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Inspector Notes / Verification Remarks</label>
+          <textarea id="disp-remarks" placeholder="Enter findings or rework instructions..." 
+            class="w-full bg-slate-950 border border-slate-700 rounded p-2 text-xs text-white focus:outline-none focus:border-indigo-500 h-20"></textarea>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 pt-2">
+          <button onclick="submitDisposition('APPROVED')" class="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold text-center">
+            ✓ APPROVE
+          </button>
+          <button onclick="submitDisposition('RETEST_REQUESTED')" class="p-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold text-center">
+            ↺ RETEST
+          </button>
+          <button onclick="submitDisposition('SCRAPPED')" class="p-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-bold text-center">
+            ✕ SCRAP
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-500 italic text-center">Note: Approving failed units is blocked by backend business rule.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Batch Progress Modal -->
+  <div id="batch-progress-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white">Batch Yield Analytics</h3>
+        <button onclick="closeModal('batch-progress-modal')" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div id="batch-progress-content">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "testflow-frontend",
+  "version": "1.0.0",
+  "description": "TestFlow Operations & Quality Assurance Web Console",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve ."
+  },
+  "keywords": ["electronics-testing", "qa", "traceability", "fastapi"],
+  "author": "TestFlow Team",
+  "license": "MIT"
+}
