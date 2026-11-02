@@ -328,7 +328,21 @@ async function loadWorkbench() {
 
     if (window.lucide) window.lucide.createIcons();
   } catch (err) {
-    container.innerHTML = `<div class="p-4 text-[#E7473C] text-xs font-mono">Error: ${err.message}</div>`;
+    if (err.message && err.message.includes('403')) {
+      container.innerHTML = `
+        <div class="p-10 text-center text-zinc-500 bg-white rounded-xl border border-zinc-200 shadow-sm card-smoke">
+          <i data-lucide="shield-alert" class="w-8 h-8 mx-auto mb-3 text-amber-500"></i>
+          <h3 class="text-sm font-semibold text-zinc-900">Role Restriction: Testing Workbench</h3>
+          <p class="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">The Testing Workbench test queue is restricted to floor test technicians and supervisors.</p>
+          <button onclick="loginAs('emp-syn-007@testflow-demo.local')" class="btn-red mt-4 px-4 py-2 rounded-lg text-xs font-semibold">
+            Switch to Test Tech Persona
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+    container.innerHTML = `<div class="p-6 text-center text-[#E7473C] text-xs font-mono">Error: ${err.message}</div>`;
   }
 }
 
@@ -524,7 +538,18 @@ async function loadBatches() {
       </tr>
     `).join('');
   } catch (err) {
-    container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-[#E7473C]">Error: ${err.message}</td></tr>`;
+    container.innerHTML = `
+      <tr>
+        <td colspan="7" class="p-8 text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <span class="text-[#E7473C] text-xs font-mono font-semibold">Error: ${err.message}</span>
+            <button onclick="loadBatches()" class="mt-2 px-3 py-1.5 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium rounded-lg border border-zinc-300 shadow-sm transition">
+              ↻ Retry Loading Batches
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 }
 
@@ -617,7 +642,18 @@ async function loadDispatch() {
       </tr>
     `).join('');
   } catch (err) {
-    container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-[#E7473C]">Error: ${err.message}</td></tr>`;
+    container.innerHTML = `
+      <tr>
+        <td colspan="7" class="p-8 text-center">
+          <div class="inline-flex flex-col items-center gap-2">
+            <span class="text-[#E7473C] text-xs font-mono font-semibold">Error: ${err.message}</span>
+            <button onclick="loadDispatch()" class="mt-2 px-3 py-1.5 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium rounded-lg border border-zinc-300 shadow-sm transition">
+              ↻ Retry Loading Dispatches
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 }
 

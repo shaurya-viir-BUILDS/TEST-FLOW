@@ -43,6 +43,7 @@ def _enrich_batch_response(batch: Batch, db: Session) -> BatchResponse:
     return resp
 
 
+@router.get("", response_model=List[BatchResponse], include_in_schema=False)
 @router.get("/", response_model=List[BatchResponse])
 def list_batches(
     client_id: Optional[int] = None,
@@ -65,6 +66,7 @@ def list_batches(
     return [_enrich_batch_response(b, db) for b in batches]
 
 
+@router.post("", response_model=BatchResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @router.post("/", response_model=BatchResponse, status_code=status.HTTP_201_CREATED)
 def create_inward_batch(
     batch_in: BatchCreate,

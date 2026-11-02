@@ -10,19 +10,20 @@ class BatchBase(BaseModel):
     batch_number: str
     inward_date: date = Field(default_factory=date.today)
     challan_number: Optional[str] = None
-    expected_qty: int = Field(gt=0)
-    received_qty: int = Field(gt=0)
+    expected_qty: int = Field(default=0, ge=0)
+    received_qty: int = Field(default=0, ge=0)
     storage_location: Optional[str] = None
 
 
 class BatchCreate(BatchBase):
-    pass
+    expected_qty: int = Field(gt=0)
+    received_qty: int = Field(gt=0)
 
 
 class BatchUpdate(BaseModel):
     challan_number: Optional[str] = None
-    expected_qty: Optional[int] = Field(None, gt=0)
-    received_qty: Optional[int] = Field(None, gt=0)
+    expected_qty: Optional[int] = Field(None, ge=0)
+    received_qty: Optional[int] = Field(None, ge=0)
     storage_location: Optional[str] = None
     current_status: Optional[BatchStatusEnum] = None
 
