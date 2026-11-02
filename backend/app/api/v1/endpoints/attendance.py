@@ -164,6 +164,28 @@ def get_today_summary(
     )
 
 
+@router.get("/today")
+def get_today_attendance_bundle(
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(get_current_user)
+):
+    """
+    Returns today's shift summary alongside recent attendance records for the web console.
+    """
+    summary = get_today_summary(target_date=date.today(), db=db, _current_user=current_user)
+    records = get_attendance_records(skip=0, limit=50, db=db, current_user=current_user)
+    return {
+        "date": summary.date,
+        "total_employees": summary.total_employees,
+        "present_count": summary.present,
+        "absent_count": summary.absent,
+        "on_leave_count": summary.on_leave,
+        "half_day_count": summary.half_day,
+        "attendance_rate": summary.present_percentage,
+        "records": records
+    }
+
+
 @router.post("/upload-excel", response_model=ExcelImportResult)
 async def upload_attendance_excel(
     file: UploadFile = File(...),

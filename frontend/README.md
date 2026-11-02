@@ -16,3 +16,4 @@ A responsive, high-performance web console for the TestFlow Electronics Testing,
 - **Tech Stack**: Vanilla ES6 Modules + Tailwind CSS v3 + Chart.js + Lucide Icons + Font Inter.
 - **Zero Build Friction**: Runs directly in any modern browser without requiring Node.js or bundlers.
 - **FastAPI Integration**: Automatically mounted and served by the FastAPI backend at `http://127.0.0.1:8000/`.
+

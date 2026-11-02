@@ -235,7 +235,27 @@ export const api = {
 
   // Attendance
   async getTodayAttendance() {
-    return await apiRequest('/attendance/today');
+    try {
+      return await apiRequest('/attendance/today');
+    } catch (err) {
+      try {
+        const summary = await apiRequest('/attendance/today-summary');
+        return {
+          ...summary,
+          attendance_rate: summary.present_percentage,
+          present_count: summary.present,
+          absent_count: summary.absent,
+          records: []
+        };
+      } catch (e) {
+        return {
+          attendance_rate: 0,
+          present_count: 0,
+          absent_count: 0,
+          records: []
+        };
+      }
+    }
   },
 
   async punchIn() {
@@ -246,3 +266,4 @@ export const api = {
     return await apiRequest('/attendance/punch-out', { method: 'POST' });
   }
 };
+
