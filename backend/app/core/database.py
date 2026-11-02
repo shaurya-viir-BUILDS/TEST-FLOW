@@ -2,11 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
 
+_db_url = settings.sqlalchemy_database_uri
+
 # SQLite requires check_same_thread=False
-connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    _db_url,
     connect_args=connect_args,
     echo=False
 )

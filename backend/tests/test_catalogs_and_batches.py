@@ -159,3 +159,36 @@ def test_batch_auto_serial_generation(client, admin_headers):
     assert items[0]["serial_number"] == "TF-RCVOICE-0001"
     assert items[4]["serial_number"] == "TF-RCVOICE-0005"
 
+
+def test_batch_rejects_client_product_mismatch(client, admin_headers):
+    """A batch cannot pair a client with a product model owned by another client."""
+    # Create two separate clients
+    c1_res = client.post("/api/v1/clients/", headers=admin_headers, json={"name": "Client Alpha", "code": "ALPHA"})
+    c1_id = c1_res.json()["id"]
+
+    c2_res = client.post("/api/v1/clients/", headers=admin_headers, json={"name": "Client Beta", "code": "BETA"})
+    c2_id = c2_res.json()["id"]
+
+    # Product belongs to Client Alpha
+    p_res = client.post(
+        "/api/v1/products/",
+        headers=admin_headers,
+        json={"client_id": c1_id, "category": "ROUTER", "model_number": "RTR-ALPHA", "model_name": "Alpha Router"}
+    )
+    product_id = p_res.json()["id"]
+
+    # Attempt batch with Client Beta + Alpha's product -> MUST FAIL
+    batch_res = client.post(
+        "/api/v1/batches/",
+        headers=admin_headers,
+        json={
+            "client_id": c2_id,
+            "product_model_id": product_id,
+            "batch_number": "BAT-MISMATCH",
+            "expected_qty": 5,
+            "received_qty": 5,
+        }
+    )
+    assert batch_res.status_code == 400
+    assert "different client" in batch_res.json()["detail"]
+

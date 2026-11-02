@@ -80,7 +80,10 @@ def execute_manual_test(
     for sub in request.results:
         param = param_map.get(sub.parameter_id)
         if not param:
-            continue
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown parameter ID {sub.parameter_id} for template '{template.name}'."
+            )
         eval_result, norm_val = evaluate_parameter(param, sub.measured_value)
         if eval_result == TestResultEnum.FAIL and param.is_mandatory:
             overall_pass = False
@@ -91,6 +94,18 @@ def execute_manual_test(
             result=eval_result
         )
         details_to_create.append(detail)
+
+    submitted_ids = {sub.parameter_id for sub in request.results}
+    missing_mandatory = [
+        p.parameter_name for p in template.parameters
+        if p.is_mandatory and p.id not in submitted_ids
+    ]
+    if missing_mandatory:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Missing mandatory test parameters: {missing_mandatory}. "
+                   f"All mandatory checks must be submitted."
+        )
 
     overall_result = TestResultEnum.PASS if overall_pass else TestResultEnum.FAIL
 
@@ -199,6 +214,14 @@ def parse_bench_csv(
                 result=eval_res
             ))
 
+        evaluated_ids = {d.parameter_id for d in details}
+        missing_mandatory = [
+            p.parameter_name for p in template.parameters
+            if p.is_mandatory and p.id not in evaluated_ids
+        ]
+        if missing_mandatory:
+            overall_pass = False
+
         overall_result = TestResultEnum.PASS if overall_pass else TestResultEnum.FAIL
         session = TestSession(
             batch_item_id=item.id,
@@ -218,7 +241,11 @@ def parse_bench_csv(
         item.current_status = BatchItemStatusEnum.PASSED if overall_pass else BatchItemStatusEnum.FAILED
         if not overall_pass:
             item.is_defective = True
-            failed_items.append({"serial_number": sn, "row": row_idx, "reason": "Parameter tolerance failed"})
+            if missing_mandatory:
+                reason = f"Missing mandatory parameters: {missing_mandatory}"
+            else:
+                reason = "Parameter tolerance failed"
+            failed_items.append({"serial_number": sn, "row": row_idx, "reason": reason})
             failed += 1
         else:
             passed += 1

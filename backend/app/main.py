@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.models import Department, Employee, AttendanceRecord  # ensure registered
+import app.models  # ensure all models registered in Base.metadata
 from app.api.v1.api import api_router
 
 # Create tables in database (development bootstrap)

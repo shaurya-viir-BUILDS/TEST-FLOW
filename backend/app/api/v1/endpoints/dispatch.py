@@ -7,7 +7,6 @@ from app.api.deps import get_db, require_role, get_current_user
 from app.models.employee import RoleEnum, Employee
 from app.models.batch import Batch, BatchItem, BatchItemStatusEnum, BatchStatusEnum
 from app.models.dispatch import DispatchOrder, DispatchItem, DispatchStatusEnum
-from app.models.quality import QADisposition, QADecisionEnum
 from app.schemas.dispatch import DispatchCreate, DispatchResponse
 
 router = APIRouter()
@@ -53,7 +52,8 @@ def create_dispatch_order(
     """
     Creates an outbound dispatch order.
     Enforces strict quality gate rules:
-    - Only passed/approved units in QA-approved batches can be in READY or DISPATCHED status.
+    - READY/DISPATCHED orders may include only per-unit QA_APPROVED serials.
+    - One unit's QA approval does not approve the rest of the batch.
     - HELD or BLOCKED dispatches cannot contain units.
     """
     batch = db.query(Batch).filter(Batch.id == disp_in.batch_id).first()
@@ -71,21 +71,6 @@ def create_dispatch_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Dispatch with status '{disp_in.status.value}' cannot contain products (must be empty list)."
         )
-
-    # Check Batch QA Review status
-    batch_qa_approved = (
-        batch.current_status == BatchStatusEnum.QA_APPROVED or
-        db.query(QADisposition).filter(
-            QADisposition.batch_item_id.in_([i.id for i in batch.items]),
-            QADisposition.decision == QADecisionEnum.APPROVED
-        ).first() is not None
-    )
-
-    qa_approval_label = "approved" if batch_qa_approved else ("rejected" if disp_in.status == DispatchStatusEnum.BLOCKED else "pending")
-
-    if disp_in.status in (DispatchStatusEnum.READY, DispatchStatusEnum.DISPATCHED) and not batch_qa_approved:
-        # Check if any QA approved disposition exists or batch is marked approved
-        qa_approval_label = "approved"  # Allow if explicitly authorized
 
     # Validate serial units FIRST before touching database session
     items_to_dispatch = []
@@ -105,12 +90,21 @@ def create_dispatch_order(
             )
 
         for item in items:
-            if item.current_status not in (BatchItemStatusEnum.PASSED, BatchItemStatusEnum.QA_APPROVED, BatchItemStatusEnum.DISPATCHED):
+            if item.current_status not in (BatchItemStatusEnum.QA_APPROVED, BatchItemStatusEnum.DISPATCHED):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Unit {item.serial_number} is in '{item.current_status.value}' state. Only PASSED or QA_APPROVED units can be dispatched."
+                    detail=f"Unit {item.serial_number} is in '{item.current_status.value}' state. "
+                           f"Only QA_APPROVED units can be dispatched. "
+                           f"Each unit must be individually approved by a QA inspector before dispatch."
                 )
             items_to_dispatch.append(item)
+
+    if disp_in.status in (DispatchStatusEnum.READY, DispatchStatusEnum.DISPATCHED):
+        qa_approval_label = "approved"
+    elif disp_in.status == DispatchStatusEnum.BLOCKED:
+        qa_approval_label = "rejected"
+    else:
+        qa_approval_label = "pending"
 
     client_id = disp_in.client_id or batch.client_id
 

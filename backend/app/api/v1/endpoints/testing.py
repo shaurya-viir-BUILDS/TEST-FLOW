@@ -117,44 +117,95 @@ def allocate_test_tasks(
     if not technician or not technician.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assigned technician not found or inactive.")
 
-    # Target items query
+    requested_serials = None
     items_query = db.query(BatchItem).filter(BatchItem.batch_id == batch.id)
     if alloc_in.serial_numbers:
-        items_query = items_query.filter(BatchItem.serial_number.in_([s.strip().upper() for s in alloc_in.serial_numbers]))
+        requested_serials = [s.strip().upper() for s in alloc_in.serial_numbers if s.strip()]
+        items_query = items_query.filter(BatchItem.serial_number.in_(requested_serials))
 
     items = items_query.all()
+    if requested_serials is not None:
+        found_serials = {item.serial_number for item in items}
+        missing = [sn for sn in requested_serials if sn not in found_serials]
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown serial numbers for batch {batch.batch_number}: {missing[:5]}"
+            )
+
     if not items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No matching batch items found for allocation.")
 
-    # Transition items from RECEIVED / QA_REWORK to ALLOCATED
-    for item in items:
+    allocatable_statuses = (
+        BatchItemStatusEnum.RECEIVED,
+        BatchItemStatusEnum.QA_REWORK,
+        BatchItemStatusEnum.ALLOCATED,
+    )
+    ineligible = [item.serial_number for item in items if item.current_status not in allocatable_statuses]
+    if ineligible:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The following serials cannot be allocated in their current state: {ineligible[:5]}"
+        )
+
+    items_to_bind = [item for item in items if item.current_status in allocatable_statuses]
+    if not items_to_bind:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No matching batch items found for allocation.")
+
+    active_allocs = db.query(TestTaskAllocation).filter(
+        TestTaskAllocation.batch_item_id.in_([item.id for item in items_to_bind]),
+        TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS])
+    ).all()
+    assigned_elsewhere = [
+        alloc.batch_item.serial_number
+        for alloc in active_allocs
+        if alloc.technician_id != technician.id and alloc.batch_item
+    ]
+    if assigned_elsewhere:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The following serials are already allocated to another technician: {assigned_elsewhere[:5]}"
+        )
+
+    already_bound_ids = {alloc.batch_item_id for alloc in active_allocs if alloc.technician_id == technician.id}
+
+    created = None
+    for item in items_to_bind:
         if item.current_status in (BatchItemStatusEnum.RECEIVED, BatchItemStatusEnum.QA_REWORK):
             item.current_status = BatchItemStatusEnum.ALLOCATED
+        if item.id in already_bound_ids:
+            continue
+        allocation = TestTaskAllocation(
+            batch_id=batch.id,
+            batch_item_id=item.id,
+            technician_id=technician.id,
+            assigned_by_id=current_user.id,
+            status=TaskAllocationStatusEnum.IN_PROGRESS,
+            notes=alloc_in.notes
+        )
+        db.add(allocation)
+        created = allocation
 
-    # Transition parent batch status if still RECEIVED
+    if created is None:
+        created = next((alloc for alloc in active_allocs if alloc.technician_id == technician.id), None)
+        if created is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No matching batch items found for allocation.")
+
     if batch.current_status == BatchStatusEnum.RECEIVED:
         batch.current_status = BatchStatusEnum.ALLOCATED
 
-    allocation = TestTaskAllocation(
-        batch_id=batch.id,
-        technician_id=technician.id,
-        assigned_by_id=current_user.id,
-        status=TaskAllocationStatusEnum.IN_PROGRESS,
-        notes=alloc_in.notes
-    )
-    db.add(allocation)
     db.commit()
-    db.refresh(allocation)
+    db.refresh(created)
 
     return TaskAllocationResponse(
-        id=allocation.id,
+        id=created.id,
         batch_id=batch.id,
         batch_number=batch.batch_number,
         technician_id=technician.id,
         technician_name=f"{technician.first_name} {technician.last_name}",
-        status=allocation.status,
-        assigned_at=allocation.assigned_at,
-        notes=allocation.notes
+        status=created.status,
+        assigned_at=created.assigned_at,
+        notes=created.notes
     )
 
 
@@ -168,16 +219,31 @@ def get_technician_queue(
     """
     allocations = db.query(TestTaskAllocation).filter(
         TestTaskAllocation.technician_id == current_user.id,
-        TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS])
+        TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS]),
+        TestTaskAllocation.batch_item_id.isnot(None)
     ).order_by(TestTaskAllocation.assigned_at.desc()).all()
 
-    queue = []
-    for a in allocations:
-        batch = a.batch
-        allocated_items = db.query(BatchItem).filter(
-            BatchItem.batch_id == a.batch_id,
+    bound_item_ids = [a.batch_item_id for a in allocations]
+    bound_items = {
+        item.id: item
+        for item in db.query(BatchItem).filter(
+            BatchItem.id.in_(bound_item_ids),
             BatchItem.current_status.in_([BatchItemStatusEnum.ALLOCATED, BatchItemStatusEnum.IN_TESTING])
         ).all()
+    } if bound_item_ids else {}
+
+    queue = []
+    seen_batches = set()
+    for a in allocations:
+        if a.batch_id in seen_batches:
+            continue
+        seen_batches.add(a.batch_id)
+        batch = a.batch
+        allocated_items = [
+            bound_items[alloc.batch_item_id]
+            for alloc in allocations
+            if alloc.batch_id == a.batch_id and alloc.batch_item_id in bound_items
+        ]
 
         queue.append({
             "allocation_id": a.id,

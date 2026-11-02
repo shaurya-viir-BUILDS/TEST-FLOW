@@ -54,6 +54,7 @@ def load_synthetic_demo_seed(db: Session = None):
             "test_lead": ("Testing Floor Lead", "DEP-LEAD"),
             "tester": ("Testing & Diagnostics", "DEP-TEST"),
             "qa": ("Quality Assurance", "DEP-QA"),
+            "store_keeper": ("Warehouse & Inventory", "DEP-STORE"),
         }
         dept_lookup = {}
         for key, (name, code) in depts.items():
@@ -70,6 +71,8 @@ def load_synthetic_demo_seed(db: Session = None):
             "hr": RoleEnum.HR_OFFICER,
             "test_lead": RoleEnum.TEST_SUPERVISOR,
             "tester": RoleEnum.TEST_TECHNICIAN,
+            "qa": RoleEnum.QA_INSPECTOR,
+            "store_keeper": RoleEnum.STORE_KEEPER,
         }
         emp_lookup = {}
         default_pwd_hash = get_password_hash("DemoPass123!")
@@ -314,6 +317,8 @@ def load_synthetic_demo_seed(db: Session = None):
             "major": DefectSeverityEnum.MAJOR,
             "critical": DefectSeverityEnum.CRITICAL,
         }
+        # Use QA Inspector for defect logging and resolution (fallback to tester if missing)
+        qa_inspector = emp_lookup.get("EMP-SYN-013", emp_lookup["EMP-SYN-007"])
         for d_raw in payload["defects"]:
             item = product_lookup[d_raw["product_id"]]
             is_res = (d_raw["status"] == "resolved")
@@ -324,7 +329,7 @@ def load_synthetic_demo_seed(db: Session = None):
                 description=d_raw["description"],
                 logged_by=emp_lookup["EMP-SYN-007"].id,
                 is_resolved=is_res,
-                resolved_by=emp_lookup["EMP-SYN-005"].id if is_res else None,
+                resolved_by=qa_inspector.id if is_res else None,
                 resolution_notes=d_raw.get("resolution") if is_res else None,
                 resolved_at=datetime.utcnow() if is_res else None
             )
@@ -376,13 +381,14 @@ def load_synthetic_demo_seed(db: Session = None):
                 )
                 db.add(ar)
 
-        # 13. Dispatches
+        # 13. Dispatches (use Store Keeper role for dispatch creation)
         disp_status_map = {
             "dispatched": DispatchStatusEnum.DISPATCHED,
             "ready": DispatchStatusEnum.READY,
             "held": DispatchStatusEnum.HELD,
             "blocked": DispatchStatusEnum.BLOCKED,
         }
+        store_keeper = emp_lookup.get("EMP-SYN-014", emp_lookup["EMP-SYN-001"])
         for d_raw in payload["dispatches"]:
             batch = batch_lookup[d_raw["batch_id"]]
             d_status = disp_status_map.get(d_raw["status"], DispatchStatusEnum.READY)
@@ -400,7 +406,7 @@ def load_synthetic_demo_seed(db: Session = None):
                     vehicle_number="DL-01-SY-2026",
                     total_units=len(d_raw["product_ids"]),
                     notes=f"Synthetic demo dispatch for batch {batch.batch_number}",
-                    created_by_id=emp_lookup["EMP-SYN-001"].id
+                    created_by_id=store_keeper.id
                 )
                 db.add(order)
                 db.flush()

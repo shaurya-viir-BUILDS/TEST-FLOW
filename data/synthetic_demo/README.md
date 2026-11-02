@@ -10,7 +10,7 @@ This directory contains the official **TestFlow Synthetic Demo Seed Dataset** fo
 
 ## Invariant Summary
 
-- 12 Employees (Management, HR, Test Lead, Tester)
+- 14 Employees (Management, HR, Test Lead, Tester, QA Inspector, Store Keeper)
 - 3 Clients (Northstar Signal Works, Blue Orbit Devices, Cedar Loop Electronics)
 - 6 Product Models (Wi-Fi Routers, Remotes, Set-Top Boxes)
 - 4 Configurable Test Templates with tolerance ranges

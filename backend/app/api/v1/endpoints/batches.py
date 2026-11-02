@@ -80,6 +80,12 @@ def create_inward_batch(
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Product model id {batch_in.product_model_id} not found.")
 
+    if product.client_id != client.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Product model '{product.model_number}' belongs to a different client than the selected batch client."
+        )
+
     # Check batch_number uniqueness
     existing = db.query(Batch).filter(Batch.batch_number == batch_in.batch_number.strip().upper()).first()
     if existing:

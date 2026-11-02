@@ -1,6 +1,6 @@
 # TestFlow: Integrated Electronics Testing, QA & Operations Management Platform
 
-[![Project Status: Planning](https://img.shields.io/badge/Status-Planning%20%26%20Specification-blue.svg)](#)
+[![Project Status: Backend Implemented](https://img.shields.io/badge/Status-Backend%20Implemented-green.svg)](#)
 [![Architecture: Option B](https://img.shields.io/badge/Stack-FastAPI%20%2B%20React%20%2B%20PostgreSQL-green.svg)](#)
 [![Academic Project](https://img.shields.io/badge/Project-Internship%20Major%20Project-purple.svg)](#)
 
@@ -74,10 +74,27 @@ testflow/
 
 ## 6. Current Status & Next Steps
 
-This project is currently in the **Planning & Documentation Phase**. Implementation will proceed strictly in accordance with [docs/roadmap.md](docs/roadmap.md):
-1. **Milestone 1:** Repository initialization, database setup, Auth & HR attendance management.
-2. **Milestone 2:** Client, Product Model & Inward Batch / Serialization tracking.
-3. **Milestone 3:** Test Templates, Manual & Automated CSV Test Execution, and QA Dispositions.
-4. **Milestone 4:** Dispatch Management, Universal Serial Traceability, and Analytics Dashboards.
-5. **Milestone 5:** Realistic electronics seed data, edge-case testing, and academic defense preparation.
+The **FastAPI backend is implemented** (auth/HR, catalog, batches, testing, QA, dispatch, dashboards, and synthetic demo seed). Interactive docs are at `/docs`. The React frontend listed in the stack is not in this repository yet.
+
+### Local run (backend)
+
+```bash
+cd backend
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m app.db.seed                 # optional staff accounts
+python -m app.db.load_synthetic_seed  # optional 120-unit demo
+uvicorn app.main:app --reload --app-dir .
+```
+
+Default database is SQLite (`./testflow.db`). For PostgreSQL, set `POSTGRES_URL` (takes precedence) or `DATABASE_URL`, then apply migrations:
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+Set `SECRET_KEY` when `ENVIRONMENT=production`. Login cookies use `secure=True` in production (or when `COOKIE_SECURE=true`).
+
+Remaining work follows [docs/roadmap.md](docs/roadmap.md), including the Vite/React UI.
 

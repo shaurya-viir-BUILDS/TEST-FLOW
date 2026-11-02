@@ -78,6 +78,18 @@
       "display_name": "Synthetic Tester 6",
       "role": "tester",
       "active": true
+    },
+    {
+      "employee_id": "EMP-SYN-013",
+      "display_name": "Synthetic QA Inspector",
+      "role": "qa",
+      "active": true
+    },
+    {
+      "employee_id": "EMP-SYN-014",
+      "display_name": "Synthetic Store Keeper",
+      "role": "store_keeper",
+      "active": true
     }
   ],
   "clients": [
@@ -6625,7 +6637,7 @@
     {
       "quality_review_id": "QAR-SYN-001",
       "batch_id": "BAT-SYN-003",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-11",
       "status": "approved",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6633,7 +6645,7 @@
     {
       "quality_review_id": "QAR-SYN-002",
       "batch_id": "BAT-SYN-004",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-12",
       "status": "pending",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6641,7 +6653,7 @@
     {
       "quality_review_id": "QAR-SYN-003",
       "batch_id": "BAT-SYN-005",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-13",
       "status": "approved",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6649,7 +6661,7 @@
     {
       "quality_review_id": "QAR-SYN-004",
       "batch_id": "BAT-SYN-007",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-14",
       "status": "rejected",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6657,7 +6669,7 @@
     {
       "quality_review_id": "QAR-SYN-005",
       "batch_id": "BAT-SYN-008",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-15",
       "status": "approved",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6665,7 +6677,7 @@
     {
       "quality_review_id": "QAR-SYN-006",
       "batch_id": "BAT-SYN-002",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-16",
       "status": "pending",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6673,7 +6685,7 @@
     {
       "quality_review_id": "QAR-SYN-007",
       "batch_id": "BAT-SYN-006",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-17",
       "status": "pending",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."
@@ -6681,7 +6693,7 @@
     {
       "quality_review_id": "QAR-SYN-008",
       "batch_id": "BAT-SYN-005",
-      "reviewed_by_employee_id": "EMP-SYN-005",
+      "reviewed_by_employee_id": "EMP-SYN-013",
       "review_date": "2026-10-18",
       "status": "approved",
       "notes": "Synthetic quality review record for dashboard and workflow demonstration."

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
+from app.core.config import settings
 from app.core.security import verify_password, create_access_token
 from app.models.employee import Employee
 from app.schemas.auth import LoginRequest, TokenResponse, UserMeResponse
@@ -33,7 +34,7 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
         httponly=True,
         max_age=60 * 60 * 24,  # 24 hours
         samesite="lax",
-        secure=False  # Set True in production with HTTPS
+        secure=settings.cookie_secure
     )
 
     dept_name = user.department.name if user.department else None

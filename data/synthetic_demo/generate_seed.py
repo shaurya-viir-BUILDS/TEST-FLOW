@@ -25,6 +25,9 @@ def main() -> None:
     ] + [
         {"employee_id": f"EMP-SYN-{i:03d}", "display_name": f"Synthetic Tester {i-6}", "role": "tester", "active": True}
         for i in range(7, 13)
+    ] + [
+        {"employee_id": "EMP-SYN-013", "display_name": "Synthetic QA Inspector One", "role": "qa", "active": True},
+        {"employee_id": "EMP-SYN-014", "display_name": "Synthetic Store Keeper One", "role": "store_keeper", "active": True},
     ]
 
     clients = [
@@ -144,7 +147,7 @@ def main() -> None:
 
     quality_reviews = []
     for i, (bid, status) in enumerate([("BAT-SYN-003", "approved"), ("BAT-SYN-004", "pending"), ("BAT-SYN-005", "approved"), ("BAT-SYN-007", "rejected"), ("BAT-SYN-008", "approved"), ("BAT-SYN-002", "pending"), ("BAT-SYN-006", "pending"), ("BAT-SYN-005", "approved")], start=1):
-        quality_reviews.append({"quality_review_id": f"QAR-SYN-{i:03d}", "batch_id": bid, "reviewed_by_employee_id": "EMP-SYN-005", "review_date": f"2026-10-{10+i:02d}", "status": status, "notes": "Synthetic quality review record for dashboard and workflow demonstration."})
+        quality_reviews.append({"quality_review_id": f"QAR-SYN-{i:03d}", "batch_id": bid, "reviewed_by_employee_id": "EMP-SYN-013", "review_date": f"2026-10-{10+i:02d}", "status": status, "notes": "Synthetic quality review record for dashboard and workflow demonstration."})
 
     attendance = []
     workdays = []

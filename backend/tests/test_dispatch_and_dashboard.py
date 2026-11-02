@@ -89,7 +89,7 @@ def test_dispatch_order_creation_and_eligibility(client, store_headers, admin_he
     )
     # Unit 2 remains un-tested / NOT approved
 
-    # 2. Attempt dispatch with un-approved unit -> MUST FAIL with 400
+    # 2. Attempt dispatch with un-tested unit -> MUST FAIL with 400
     res_fail = client.post(
         "/api/v1/dispatch/",
         headers=store_headers,
@@ -101,9 +101,29 @@ def test_dispatch_order_creation_and_eligibility(client, store_headers, admin_he
         }
     )
     assert res_fail.status_code == 400
-    assert "Only PASSED or QA_APPROVED units can be dispatched" in res_fail.json()["detail"]
+    assert "Only QA_APPROVED units can be dispatched" in res_fail.json()["detail"]
 
-    # 3. Dispatch with valid passed unit -> SUCCEEDS
+    # 2b. Attempt dispatch with merely PASSED unit (no QA) -> MUST ALSO FAIL
+    res_passed_no_qa = client.post(
+        "/api/v1/dispatch/",
+        headers=store_headers,
+        json={
+            "dispatch_code": "DSP-ORDER-001",
+            "batch_id": bid,
+            "status": "DISPATCHED",
+            "serial_numbers": ["DSP-SN-001"]
+        }
+    )
+    assert res_passed_no_qa.status_code == 400
+    assert "Only QA_APPROVED units can be dispatched" in res_passed_no_qa.json()["detail"]
+
+    # 3. QA-approve unit 1, then dispatch -> SUCCEEDS
+    client.post(
+        "/api/v1/quality/disposition",
+        headers=admin_headers,
+        json={"batch_item_id": item_pass, "decision": "APPROVED", "remarks": "QA sign-off"}
+    )
+
     res_pass = client.post(
         "/api/v1/dispatch/",
         headers=store_headers,

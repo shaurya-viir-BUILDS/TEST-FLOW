@@ -26,7 +26,9 @@ def check(condition, message):
         errors.append(message)
 
 # Required cardinalities and synthetic labeling.
-check(len(employees) == 12, f"expected 12 employees, got {len(employees)}")
+check(len(employees) == 14, f"expected 14 employees, got {len(employees)}")
+check(any(e["role"] == "qa" for e in employees.values()), "missing QA inspector employee")
+check(any(e["role"] == "store_keeper" for e in employees.values()), "missing store keeper employee")
 check(len(clients) == 3, f"expected 3 clients, got {len(clients)}")
 check(len(models) == 6, f"expected 6 product models, got {len(models)}")
 check(len(templates) == 4, f"expected 4 templates, got {len(templates)}")
@@ -97,6 +99,7 @@ for p in products.values():
 for q in DATA["quality_reviews"]:
     check(q["batch_id"] in batches, f"quality review {q['quality_review_id']} has invalid batch")
     check(q["reviewed_by_employee_id"] in employees, f"quality review {q['quality_review_id']} has invalid reviewer")
+    check(employees[q["reviewed_by_employee_id"]]["role"] == "qa", f"quality review {q['quality_review_id']} is not attributed to a QA inspector")
 for dispatch in DATA["dispatches"]:
     check(dispatch["batch_id"] in batches, f"dispatch {dispatch['dispatch_id']} has invalid batch")
     for pid in dispatch["product_ids"]:
