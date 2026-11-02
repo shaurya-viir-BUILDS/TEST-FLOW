@@ -12,7 +12,10 @@ router = APIRouter()
 
 @router.post("/login", response_model=TokenResponse)
 def login(login_data: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    user = db.query(Employee).filter(Employee.email == login_data.email.lower().strip()).first()
+    ident = login_data.email.strip()
+    user = db.query(Employee).filter(
+        (Employee.email == ident.lower()) | (Employee.emp_code == ident.upper())
+    ).first()
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -62,6 +65,18 @@ def login(login_data: LoginRequest, response: Response, db: Session = Depends(ge
 def logout(response: Response):
     response.delete_cookie("testflow_access_token")
     return {"message": "Successfully logged out"}
+
+
+@router.get("/demo-status")
+def get_demo_status():
+    """
+    Indicates whether public demo personas are enabled.
+    Disabled in production to protect privileged access.
+    """
+    return {
+        "demo_enabled": not settings.is_production,
+        "environment": settings.ENVIRONMENT
+    }
 
 
 @router.get("/me", response_model=UserMeResponse)

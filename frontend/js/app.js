@@ -5,6 +5,18 @@ let currentTab = 'dashboard';
 let yieldChart = null;
 let paretoChart = null;
 
+// HTML escaping helper to prevent Stored XSS
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
 // Toast helper
 export function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -108,16 +120,31 @@ window.addEventListener('auth-changed', () => {
   renderUserBar();
 });
 
-// Quick login personas (All 7 Roles Supported)
+// Quick login personas (All 7 Roles Supported with featured demo credentials)
 const PERSONAS = [
-  { label: 'Operations Manager', email: 'emp-syn-001@testflow-demo.local', role: 'OPERATIONS_MGR', pass: 'DemoPass123!' },
+  { label: 'Operations Mgr (Sambhav)', email: 'sambhav.yadav@testflow.local', role: 'OPERATIONS_MGR', pass: '12345' },
+  { label: 'Super Admin (Shaurya)', email: 'shaurya.singh@testflow.local', role: 'SUPER_ADMIN', pass: '67890' },
   { label: 'QA Inspector', email: 'emp-syn-013@testflow-demo.local', role: 'QA_INSPECTOR', pass: 'DemoPass123!' },
   { label: 'Store Keeper', email: 'emp-syn-014@testflow-demo.local', role: 'STORE_KEEPER', pass: 'DemoPass123!' },
   { label: 'Test Lead', email: 'emp-syn-005@testflow-demo.local', role: 'TEST_SUPERVISOR', pass: 'DemoPass123!' },
   { label: 'Test Tech', email: 'emp-syn-007@testflow-demo.local', role: 'TEST_TECHNICIAN', pass: 'DemoPass123!' },
-  { label: 'Super Admin', email: 'admin@testflow.local', role: 'SUPER_ADMIN', pass: 'Admin123!' },
   { label: 'HR Officer', email: 'emp-syn-003@testflow-demo.local', role: 'HR_OFFICER', pass: 'DemoPass123!' },
 ];
+
+let isDemoModeActive = true;
+async function fetchDemoStatus() {
+  try {
+    const res = await fetch('/api/v1/auth/demo-status');
+    if (res.ok) {
+      const data = await res.json();
+      isDemoModeActive = data.demo_enabled !== false;
+      renderUserBar();
+    }
+  } catch (e) {
+    // Keep local default
+  }
+}
+fetchDemoStatus();
 
 export async function loginAs(email, password = 'DemoPass123!') {
   try {
@@ -139,19 +166,25 @@ function renderUserBar() {
   const personaSelector = document.getElementById('persona-buttons');
 
   if (personaSelector) {
-    personaSelector.innerHTML = PERSONAS.map(p => {
-      const isActive = authState.user?.email === p.email;
-      return `
-        <button onclick="loginAs('${p.email}')" 
-          class="text-xs px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 border ${
-            isActive 
-              ? 'bg-[#E7473C] text-white border-[#E7473C] shadow-sm font-semibold' 
-              : 'bg-white text-zinc-600 border-zinc-300 hover:border-[#E7473C] hover:text-[#E7473C] hover:bg-red-50/50'
-          }">
-          <span>${p.label}</span>
-        </button>
-      `;
-    }).join('');
+    if (!isDemoModeActive) {
+      personaSelector.innerHTML = '';
+      personaSelector.classList.add('hidden');
+    } else {
+      personaSelector.classList.remove('hidden');
+      personaSelector.innerHTML = PERSONAS.map(p => {
+        const isActive = authState.user?.email === p.email;
+        return `
+          <button onclick="loginAs('${p.email}')" 
+            class="text-xs px-3.5 py-1.5 rounded-lg font-medium transition-all duration-200 border ${
+              isActive 
+                ? 'bg-[#E7473C] text-white border-[#E7473C] shadow-sm font-semibold' 
+                : 'bg-white text-zinc-600 border-zinc-300 hover:border-[#E7473C] hover:text-[#E7473C] hover:bg-red-50/50'
+            }">
+            <span>${p.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
   }
 
   if (userContainer) {
@@ -251,12 +284,18 @@ async function loadDashboard() {
     const overview = await api.getOverview();
     const quality = await api.getQualityDashboard();
 
-    document.getElementById('kpi-yield').textContent = `${overview.overall_yield_percentage}%`;
-    document.getElementById('kpi-tested').textContent = overview.tested_units;
-    document.getElementById('kpi-passed').textContent = overview.passed_units;
-    document.getElementById('kpi-failed').textContent = overview.failed_units;
-    document.getElementById('kpi-defects').textContent = quality.total_defects;
-    document.getElementById('kpi-attendance').textContent = `${overview.attendance_rate_today}%`;
+    const passed = overview.passed_units ?? overview.units_passed ?? 0;
+    const failed = overview.failed_units ?? overview.units_failed ?? 0;
+    const totalUnits = overview.total_registered_units ?? overview.total_units ?? 0;
+    const tested = overview.tested_units ?? (passed + failed);
+    const attendance = overview.attendance_rate_today ?? overview.today_attendance_percentage ?? 0;
+
+    document.getElementById('kpi-yield').textContent = `${overview.overall_yield_percentage ?? 0}%`;
+    document.getElementById('kpi-tested').textContent = tested;
+    document.getElementById('kpi-passed').textContent = passed;
+    document.getElementById('kpi-failed').textContent = failed;
+    document.getElementById('kpi-defects').textContent = quality.total_defects ?? 0;
+    document.getElementById('kpi-attendance').textContent = `${attendance}%`;
 
     // Yield Doughnut Chart (Emerald, Bright Red #E7473C, Smoke Gray)
     const yieldCtx = document.getElementById('yield-chart')?.getContext('2d');
@@ -268,9 +307,9 @@ async function loadDashboard() {
           labels: ['Passed Units', 'Failed Units', 'Pending Testing'],
           datasets: [{
             data: [
-              overview.passed_units,
-              overview.failed_units,
-              Math.max(0, overview.total_registered_units - overview.tested_units)
+              passed,
+              failed,
+              Math.max(0, totalUnits - tested)
             ],
             backgroundColor: ['#10B981', '#E7473C', '#CBD5E1'],
             borderColor: '#FFFFFF',
@@ -366,21 +405,21 @@ async function loadWorkbench() {
         <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
           <div>
             <span class="text-xs uppercase font-mono px-2.5 py-0.5 rounded bg-red-50 text-[#E7473C] border border-red-200 font-bold mr-2">
-              Batch ${group.batch_number}
+              Batch ${escapeHtml(group.batch_number)}
             </span>
-            <span class="text-sm font-bold text-zinc-900">${group.product_model || 'Product'}</span>
+            <span class="text-sm font-bold text-zinc-900">${escapeHtml(group.product_model || 'Product')}</span>
           </div>
-          <span class="text-xs text-zinc-500 font-mono">Pending units: <strong class="text-zinc-900">${group.pending_units_count}</strong></span>
+          <span class="text-xs text-zinc-500 font-mono">Pending units: <strong class="text-zinc-900">${escapeHtml(group.pending_units_count)}</strong></span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           ${group.units.map(u => `
             <div class="bg-zinc-50/70 p-3.5 rounded-lg border border-zinc-200 flex items-center justify-between hover:border-zinc-300 transition">
               <div>
-                <div class="font-mono text-xs font-bold text-zinc-900">${u.serial_number}</div>
-                <div class="text-[10px] text-amber-600 font-semibold uppercase mt-0.5 font-mono">${u.status}</div>
+                <div class="font-mono text-xs font-bold text-zinc-900">${escapeHtml(u.serial_number)}</div>
+                <div class="text-[10px] text-amber-600 font-semibold uppercase mt-0.5 font-mono">${escapeHtml(u.status)}</div>
               </div>
-              <button onclick="openTestModal(${u.id}, '${u.serial_number}')" 
+              <button onclick="openTestModal(${Number(u.id)}, decodeURIComponent('${encodeURIComponent(u.serial_number)}'))" 
                 class="btn-red px-3 py-1 text-xs rounded-md font-medium flex items-center gap-1.5 shadow-sm">
                 <i data-lucide="play" class="w-3 h-3"></i> Test
               </button>
@@ -440,14 +479,14 @@ export async function openTestModal(unitId, serialNumber) {
     activeTemplate = templateDetail;
 
     container.innerHTML = `
-      <div class="mb-3 text-xs text-[#E7473C] font-mono font-semibold">Template: ${templateDetail.name} (v${templateDetail.version})</div>
+      <div class="mb-3 text-xs text-[#E7473C] font-mono font-semibold">Template: ${escapeHtml(templateDetail.name)} (v${escapeHtml(templateDetail.version)})</div>
       <div class="space-y-3">
         ${templateDetail.parameters.map(p => `
           <div class="bg-zinc-50 p-3 rounded-lg border border-zinc-200 text-xs">
             <div class="flex justify-between gap-2 mb-1.5 font-medium text-zinc-900">
-              <span>${p.parameter_name} ${p.is_mandatory ? '<span class="text-[#E7473C] font-bold" title="Required">*</span>' : ''}</span>
+              <span>${escapeHtml(p.parameter_name)} ${p.is_mandatory ? '<span class="text-[#E7473C] font-bold" title="Required">*</span>' : ''}</span>
               <span class="text-zinc-500 font-mono text-[11px] shrink-0">
-                ${p.data_type === 'NUMERIC_RANGE' ? `[${p.min_limit} - ${p.max_limit} ${p.unit_of_measure || ''}]` : p.data_type}
+                ${p.data_type === 'NUMERIC_RANGE' ? `[${escapeHtml(p.min_limit)} - ${escapeHtml(p.max_limit)} ${escapeHtml(p.unit_of_measure || '')}]` : escapeHtml(p.data_type)}
               </span>
             </div>
             ${p.data_type === 'BOOLEAN' ? `
@@ -567,23 +606,23 @@ async function loadQuality() {
 
     container.innerHTML = defects.map(d => `
       <tr class="border-b border-zinc-100 hover:bg-zinc-50 text-xs font-mono transition">
-        <td class="p-3.5 text-[#E7473C] font-bold">${d.serial_number || 'N/A'}</td>
-        <td class="p-3.5 text-zinc-900 font-semibold">${d.defect_code}</td>
+        <td class="p-3.5 text-[#E7473C] font-bold">${escapeHtml(d.serial_number || 'N/A')}</td>
+        <td class="p-3.5 text-zinc-900 font-semibold">${escapeHtml(d.defect_code)}</td>
         <td class="p-3.5">
           <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
             d.severity === 'CRITICAL' ? 'bg-red-50 text-[#E7473C] border border-red-200' :
             d.severity === 'MAJOR' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
             'bg-zinc-100 text-zinc-700 border border-zinc-200'
-          }">${d.severity}</span>
+          }">${escapeHtml(d.severity)}</span>
         </td>
-        <td class="p-3.5 font-sans text-zinc-700">${d.description}</td>
+        <td class="p-3.5 font-sans text-zinc-700">${escapeHtml(d.description)}</td>
         <td class="p-3.5">
           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${d.is_resolved ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
             ${d.is_resolved ? 'RESOLVED' : 'OPEN'}
           </span>
         </td>
         <td class="p-3.5 text-right font-sans">
-          <button onclick="openDispositionModal(${d.batch_item_id}, '${d.serial_number}')" 
+          <button onclick="openDispositionModal(${Number(d.batch_item_id)}, decodeURIComponent('${encodeURIComponent(d.serial_number || '')}'))" 
             class="px-3 py-1 bg-white hover:bg-[#E7473C] text-zinc-700 hover:text-white border border-zinc-300 hover:border-[#E7473C] rounded-md text-xs font-medium transition shadow-sm">
             Review QA
           </button>
@@ -655,20 +694,20 @@ async function loadBatches() {
 
     container.innerHTML = batches.map(b => `
       <tr class="border-b border-zinc-100 hover:bg-zinc-50 text-xs transition">
-        <td class="p-3.5 font-mono font-bold text-zinc-900">${b.batch_number}</td>
-        <td class="p-3.5 font-medium text-zinc-700">${b.client_name || 'N/A'}</td>
-        <td class="p-3.5 font-mono text-zinc-500">${b.product_model_number || 'N/A'}</td>
-        <td class="p-3.5 font-mono text-center text-zinc-900 font-semibold">${b.received_qty}</td>
-        <td class="p-3.5 font-mono text-center text-emerald-600 font-bold">${b.passed_count || 0}</td>
+        <td class="p-3.5 font-mono font-bold text-zinc-900">${escapeHtml(b.batch_number)}</td>
+        <td class="p-3.5 font-medium text-zinc-700">${escapeHtml(b.client_name || 'N/A')}</td>
+        <td class="p-3.5 font-mono text-zinc-500">${escapeHtml(b.product_model_number || 'N/A')}</td>
+        <td class="p-3.5 font-mono text-center text-zinc-900 font-semibold">${escapeHtml(b.received_qty)}</td>
+        <td class="p-3.5 font-mono text-center text-emerald-600 font-bold">${escapeHtml(b.passed_count || 0)}</td>
         <td class="p-3.5 text-center">
           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
             b.current_status === 'TESTED' ? 'badge-passed' :
             b.current_status === 'DISPATCHED' ? 'badge-dispatched' :
             b.current_status === 'IN_TESTING' ? 'badge-allocated' : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
-          }">${b.current_status}</span>
+          }">${escapeHtml(b.current_status)}</span>
         </td>
         <td class="p-3.5 text-right">
-          <button onclick="viewBatchProgress(${b.id})" class="px-3 py-1 bg-white hover:bg-[#E7473C] text-zinc-700 hover:text-white rounded-md border border-zinc-300 hover:border-[#E7473C] transition text-xs font-medium shadow-sm">
+          <button onclick="viewBatchProgress(${Number(b.id)})" class="px-3 py-1 bg-white hover:bg-[#E7473C] text-zinc-700 hover:text-white rounded-md border border-zinc-300 hover:border-[#E7473C] transition text-xs font-medium shadow-sm">
             Yield Analytics
           </button>
         </td>
@@ -701,11 +740,11 @@ export async function viewBatchProgress(batchId) {
       <div class="space-y-4">
         <div class="flex justify-between items-center border-b border-zinc-200 pb-3">
           <div>
-            <div class="text-base font-bold text-zinc-900">${prog.batch_number}</div>
-            <div class="text-xs text-[#E7473C] font-semibold">${prog.product_model_name}</div>
+            <div class="text-base font-bold text-zinc-900">${escapeHtml(prog.batch_number)}</div>
+            <div class="text-xs text-[#E7473C] font-semibold">${escapeHtml(prog.product_model_name)}</div>
           </div>
           <div class="text-right">
-            <div class="text-2xl font-mono font-bold text-emerald-600">${prog.first_pass_yield}%</div>
+            <div class="text-2xl font-mono font-bold text-emerald-600">${escapeHtml(prog.first_pass_yield)}%</div>
             <div class="text-[10px] text-zinc-500 uppercase tracking-wider font-mono">First-Pass Yield</div>
           </div>
         </div>
@@ -713,30 +752,30 @@ export async function viewBatchProgress(batchId) {
         <div>
           <div class="flex justify-between text-xs mb-1 font-medium">
             <span class="text-zinc-600">Testing Completion</span>
-            <span class="font-mono text-zinc-900">${prog.completion_percentage}% (${prog.units_passed + prog.units_failed}/${prog.total_units})</span>
+            <span class="font-mono text-zinc-900">${escapeHtml(prog.completion_percentage)}% (${escapeHtml(prog.units_passed + prog.units_failed)}/${escapeHtml(prog.total_units)})</span>
           </div>
           <div class="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden border border-zinc-200">
-            <div class="bg-gradient-to-r from-[#E7473C] to-emerald-500 h-full transition-all duration-500" style="width: ${prog.completion_percentage}%"></div>
+            <div class="bg-gradient-to-r from-[#E7473C] to-emerald-500 h-full transition-all duration-500" style="width: ${escapeHtml(prog.completion_percentage)}%"></div>
           </div>
         </div>
 
         <div class="grid grid-cols-3 gap-2.5 text-center text-xs pt-2">
           <div class="bg-zinc-50 p-2.5 rounded-lg border border-zinc-200">
             <div class="text-[10px] text-zinc-500 uppercase font-semibold">Passed</div>
-            <div class="font-mono font-bold text-emerald-600 text-base mt-0.5">${prog.units_passed}</div>
+            <div class="font-mono font-bold text-emerald-600 text-base mt-0.5">${escapeHtml(prog.units_passed)}</div>
           </div>
           <div class="bg-zinc-50 p-2.5 rounded-lg border border-zinc-200">
             <div class="text-[10px] text-zinc-500 uppercase font-semibold">QA Approved</div>
-            <div class="font-mono font-bold text-[#E7473C] text-base mt-0.5">${prog.units_qa_approved}</div>
+            <div class="font-mono font-bold text-[#E7473C] text-base mt-0.5">${escapeHtml(prog.units_qa_approved)}</div>
           </div>
           <div class="bg-zinc-50 p-2.5 rounded-lg border border-zinc-200">
             <div class="text-[10px] text-zinc-500 uppercase font-semibold">Rework / Scrapped</div>
-            <div class="font-mono font-bold text-amber-600 text-base mt-0.5">${prog.units_failed + prog.units_qa_rework}</div>
+            <div class="font-mono font-bold text-amber-600 text-base mt-0.5">${escapeHtml(prog.units_failed + prog.units_qa_rework)}</div>
           </div>
         </div>
 
         <div class="text-[11px] text-zinc-600 pt-1">
-          <strong class="text-zinc-900">Active Technicians:</strong> ${prog.active_technicians?.join(', ') || 'None assigned yet'}
+          <strong class="text-zinc-900">Active Technicians:</strong> ${escapeHtml(prog.active_technicians?.join(', ') || 'None assigned yet')}
         </div>
       </div>
     `;
@@ -771,19 +810,19 @@ async function loadDispatch() {
 
     container.innerHTML = dispatches.map(d => `
       <tr class="border-b border-zinc-100 hover:bg-zinc-50 text-xs transition">
-        <td class="p-3.5 font-mono font-bold text-zinc-900">${d.dispatch_code}</td>
-        <td class="p-3.5 font-mono text-zinc-600">${d.batch_number || 'N/A'}</td>
-        <td class="p-3.5 text-zinc-800 font-semibold">${d.client_name || 'N/A'}</td>
-        <td class="p-3.5 font-mono text-center text-zinc-900 font-semibold">${d.total_units} units</td>
+        <td class="p-3.5 font-mono font-bold text-zinc-900">${escapeHtml(d.dispatch_code)}</td>
+        <td class="p-3.5 font-mono text-zinc-600">${escapeHtml(d.batch_number || 'N/A')}</td>
+        <td class="p-3.5 text-zinc-800 font-semibold">${escapeHtml(d.client_name || 'N/A')}</td>
+        <td class="p-3.5 font-mono text-center text-zinc-900 font-semibold">${escapeHtml(d.total_units)} units</td>
         <td class="p-3.5 text-center">
           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
             d.status === 'DISPATCHED' ? 'badge-dispatched' :
             d.status === 'READY' ? 'badge-passed' :
             d.status === 'HELD' ? 'badge-allocated' : 'badge-failed'
-          }">${d.status}</span>
+          }">${escapeHtml(d.status)}</span>
         </td>
-        <td class="p-3.5 text-zinc-600">${d.carrier_name || 'Carrier Pending'}</td>
-        <td class="p-3.5 text-zinc-500 font-mono">${d.dispatch_date}</td>
+        <td class="p-3.5 text-zinc-600">${escapeHtml(d.carrier_name || 'Carrier Pending')}</td>
+        <td class="p-3.5 text-zinc-500 font-mono">${escapeHtml(d.dispatch_date)}</td>
       </tr>
     `).join('');
   } catch (err) {
@@ -821,7 +860,7 @@ export async function performTraceabilityQuery(serial = null) {
   }
 
   const resultContainer = document.getElementById('traceability-results');
-  resultContainer.innerHTML = `<div class="bg-white rounded-xl border border-zinc-200 shadow-sm"><div class="tf-loading"><span class="tf-spinner"></span><span>Searching digital birth certificate for ${query}...</span></div></div>`;
+  resultContainer.innerHTML = `<div class="bg-white rounded-xl border border-zinc-200 shadow-sm"><div class="tf-loading"><span class="tf-spinner"></span><span>Searching digital birth certificate for ${escapeHtml(query)}...</span></div></div>`;
 
   try {
     const trace = await api.getTraceability(query);
@@ -831,15 +870,15 @@ export async function performTraceabilityQuery(serial = null) {
         <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-zinc-200 pb-4 mb-6">
           <div>
             <div class="text-[10px] font-mono text-[#E7473C] uppercase tracking-widest font-bold">Universal Serial Traceability</div>
-            <div class="text-2xl font-mono font-extrabold text-zinc-900 tracking-wide mt-0.5">${trace.serial_number}</div>
-            <div class="text-xs text-zinc-500 mt-1">QR Hash: <span class="font-mono text-zinc-700">${trace.qr_code_hash || 'N/A'}</span></div>
+            <div class="text-2xl font-mono font-extrabold text-zinc-900 tracking-wide mt-0.5">${escapeHtml(trace.serial_number)}</div>
+            <div class="text-xs text-zinc-500 mt-1">QR Hash: <span class="font-mono text-zinc-700">${escapeHtml(trace.qr_code_hash || 'N/A')}</span></div>
           </div>
           <div class="mt-4 md:mt-0 flex items-center gap-3">
             <span class="px-3 py-1 rounded-md text-xs font-bold uppercase ${
               trace.current_status === 'QA_APPROVED' ? 'badge-qa-approved' :
               trace.current_status === 'DISPATCHED' ? 'badge-dispatched' :
               trace.current_status === 'PASSED' ? 'badge-passed' : 'badge-allocated'
-            }">${trace.current_status}</span>
+            }">${escapeHtml(trace.current_status)}</span>
           </div>
         </div>
 
@@ -851,10 +890,10 @@ export async function performTraceabilityQuery(serial = null) {
             <div class="text-xs uppercase font-bold text-[#E7473C] tracking-wider font-mono">1. Inward Lot Receiving</div>
             <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-200 mt-2 text-xs">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div><span class="text-zinc-500">Batch Number:</span> <span class="font-mono text-zinc-900 font-bold">${trace.inward_batch.batch_number}</span></div>
-                <div><span class="text-zinc-500">OEM Client:</span> <span class="text-zinc-900 font-medium">${trace.product.client_name}</span></div>
-                <div><span class="text-zinc-500">Hardware Model:</span> <span class="text-zinc-900 font-medium">${trace.product.model_number}</span></div>
-                <div><span class="text-zinc-500">Inward Date:</span> <span class="font-mono text-zinc-900">${trace.inward_batch.inward_date}</span></div>
+                <div><span class="text-zinc-500">Batch Number:</span> <span class="font-mono text-zinc-900 font-bold">${escapeHtml(trace.inward_batch.batch_number)}</span></div>
+                <div><span class="text-zinc-500">OEM Client:</span> <span class="text-zinc-900 font-medium">${escapeHtml(trace.product.client_name)}</span></div>
+                <div><span class="text-zinc-500">Hardware Model:</span> <span class="text-zinc-900 font-medium">${escapeHtml(trace.product.model_number)}</span></div>
+                <div><span class="text-zinc-500">Inward Date:</span> <span class="font-mono text-zinc-900">${escapeHtml(trace.inward_batch.inward_date)}</span></div>
               </div>
             </div>
           </div>
@@ -867,14 +906,14 @@ export async function performTraceabilityQuery(serial = null) {
               ${(trace.test_history || []).map(sess => `
                 <div class="border-b border-zinc-200 pb-2 last:border-b-0 last:pb-0">
                   <div class="flex justify-between text-zinc-700 mb-2 font-medium">
-                    <span>Template: <strong class="text-zinc-900">${sess.template_name || 'Standard'}</strong></span>
-                    <span class="font-bold ${sess.overall_result === 'PASS' ? 'text-emerald-600' : 'text-[#E7473C]'}">${sess.overall_result}</span>
+                    <span>Template: <strong class="text-zinc-900">${escapeHtml(sess.template_name || 'Standard')}</strong></span>
+                    <span class="font-bold ${sess.overall_result === 'PASS' ? 'text-emerald-600' : 'text-[#E7473C]'}">${escapeHtml(sess.overall_result)}</span>
                   </div>
                   <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] font-mono">
                     ${(sess.measurements || []).map(m => `
                       <div class="bg-white p-2 rounded border border-zinc-200 shadow-sm">
-                        <div class="text-zinc-500 text-[10px] truncate">${m.parameter_name}</div>
-                        <div class="text-zinc-900 font-bold mt-0.5">${m.measured_value} (${m.result})</div>
+                        <div class="text-zinc-500 text-[10px] truncate">${escapeHtml(m.parameter_name)}</div>
+                        <div class="text-zinc-900 font-bold mt-0.5">${escapeHtml(m.measured_value)} (${escapeHtml(m.result)})</div>
                       </div>
                     `).join('')}
                   </div>
@@ -891,10 +930,10 @@ export async function performTraceabilityQuery(serial = null) {
               ${trace.quality_review ? `
                 <div class="flex justify-between items-center">
                   <div>
-                    <span class="text-zinc-500">Inspector:</span> <strong class="text-zinc-900">${trace.quality_review.inspector_name || 'QA Team'}</strong>
-                    <p class="text-zinc-700 mt-1 italic font-serif">"${trace.quality_review.remarks || 'Standard verification sign-off'}"</p>
+                    <span class="text-zinc-500">Inspector:</span> <strong class="text-zinc-900">${escapeHtml(trace.quality_review.inspector_name || 'QA Team')}</strong>
+                    <p class="text-zinc-700 mt-1 italic font-serif">"${escapeHtml(trace.quality_review.remarks || 'Standard verification sign-off')}"</p>
                   </div>
-                  <span class="px-2.5 py-1 rounded text-xs font-bold badge-qa-approved">${trace.quality_review.decision}</span>
+                  <span class="px-2.5 py-1 rounded text-xs font-bold badge-qa-approved">${escapeHtml(trace.quality_review.decision)}</span>
                 </div>
               ` : `
                 <div class="text-zinc-500 italic">No formal QA disposition recorded yet.</div>
@@ -909,10 +948,10 @@ export async function performTraceabilityQuery(serial = null) {
             <div class="bg-zinc-50 p-4 rounded-lg border border-zinc-200 mt-2 text-xs">
               ${trace.dispatch ? `
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <div><span class="text-zinc-500">Challan:</span> <span class="font-mono text-zinc-900 font-bold">${trace.dispatch.dispatch_code}</span></div>
-                  <div><span class="text-zinc-500">Carrier:</span> <span class="text-zinc-900 font-medium">${trace.dispatch.carrier_name || 'Direct'}</span></div>
-                  <div><span class="text-zinc-500">Date:</span> <span class="font-mono text-zinc-900">${trace.dispatch.dispatch_date}</span></div>
-                  <div><span class="text-zinc-500">Status:</span> <span class="font-bold text-sky-700">${trace.dispatch.status}</span></div>
+                  <div><span class="text-zinc-500">Challan:</span> <span class="font-mono text-zinc-900 font-bold">${escapeHtml(trace.dispatch.dispatch_code)}</span></div>
+                  <div><span class="text-zinc-500">Carrier:</span> <span class="text-zinc-900 font-medium">${escapeHtml(trace.dispatch.carrier_name || 'Direct')}</span></div>
+                  <div><span class="text-zinc-500">Date:</span> <span class="font-mono text-zinc-900">${escapeHtml(trace.dispatch.dispatch_date)}</span></div>
+                  <div><span class="text-zinc-500">Status:</span> <span class="font-bold text-sky-700">${escapeHtml(trace.dispatch.status)}</span></div>
                 </div>
               ` : `
                 <div class="text-zinc-500 italic">Unit currently in warehouse; not yet assigned to an outbound dispatch challan.</div>
@@ -962,15 +1001,15 @@ async function loadAttendance() {
     container.innerHTML = records.map(r => `
       <div class="bg-zinc-50 p-3.5 rounded-lg border border-zinc-200 flex justify-between items-center text-xs hover:border-zinc-300 transition">
         <div>
-          <div class="font-bold text-zinc-900">${r.employee_name || `${r.first_name || 'Staff'} ${r.last_name || ''}`}</div>
-          <div class="text-zinc-500 font-mono text-[10px] mt-0.5">${r.emp_code} • Operations Shift</div>
+          <div class="font-bold text-zinc-900">${escapeHtml(r.employee_name || `${r.first_name || 'Staff'} ${r.last_name || ''}`)}</div>
+          <div class="text-zinc-500 font-mono text-[10px] mt-0.5">${escapeHtml(r.emp_code)} • Operations Shift</div>
         </div>
         <div class="text-right">
           <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
             r.status === 'PRESENT' ? 'badge-passed' :
             r.status === 'ON_LEAVE' ? 'badge-allocated' : 'badge-failed'
-          }">${r.status}</span>
-          <div class="text-[10px] font-mono text-zinc-500 mt-1">${r.punch_in || '--:--'} - ${r.punch_out || '--:--'}</div>
+          }">${escapeHtml(r.status)}</span>
+          <div class="text-[10px] font-mono text-zinc-500 mt-1">${escapeHtml(r.punch_in || '--:--')} - ${escapeHtml(r.punch_out || '--:--')}</div>
         </div>
       </div>
     `).join('');

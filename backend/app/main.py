@@ -9,8 +9,9 @@ from app.core.database import Base, engine
 import app.models  # ensure all models registered in Base.metadata
 from app.api.v1.api import api_router
 
-# Create tables in database (development bootstrap)
-Base.metadata.create_all(bind=engine)
+# Create tables in database (development bootstrap only for local SQLite)
+if not settings.is_production and not settings.POSTGRES_URL and settings.sqlalchemy_database_uri.startswith("sqlite"):
+    Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

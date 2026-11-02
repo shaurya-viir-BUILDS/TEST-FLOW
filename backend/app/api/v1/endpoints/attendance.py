@@ -16,6 +16,8 @@ from app.schemas.attendance import (
 )
 from app.services.attendance_parser import parse_attendance_excel
 
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
 router = APIRouter()
 
 
@@ -76,6 +78,28 @@ def punch_attendance(
     resp.emp_code = current_user.emp_code
     resp.employee_name = f"{current_user.first_name} {current_user.last_name}"
     return resp
+
+
+@router.post("/punch-in", response_model=AttendanceResponse)
+def punch_in_attendance(
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(get_current_user)
+):
+    """
+    Self check-in alias for the current employee for today's date.
+    """
+    return punch_attendance(PunchRequest(punch_type=PunchTypeEnum.IN), db=db, current_user=current_user)
+
+
+@router.post("/punch-out", response_model=AttendanceResponse)
+def punch_out_attendance(
+    db: Session = Depends(get_db),
+    current_user: Employee = Depends(get_current_user)
+):
+    """
+    Self check-out alias for the current employee for today's date.
+    """
+    return punch_attendance(PunchRequest(punch_type=PunchTypeEnum.OUT), db=db, current_user=current_user)
 
 
 @router.get("/records", response_model=List[AttendanceResponse])
@@ -201,7 +225,12 @@ async def upload_attendance_excel(
             detail="File format not supported. Please upload an Excel (.xlsx) file."
         )
 
-    file_contents = await file.read()
+    file_contents = await file.read(MAX_UPLOAD_SIZE + 1)
+    if len(file_contents) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Attendance file exceeds maximum allowed limit of {MAX_UPLOAD_SIZE // (1024 * 1024)}MB."
+        )
     try:
         result = parse_attendance_excel(file_contents, db)
         return result

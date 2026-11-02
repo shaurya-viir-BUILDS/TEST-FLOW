@@ -90,12 +90,23 @@ def create_dispatch_order(
             )
 
         for item in items:
-            if item.current_status not in (BatchItemStatusEnum.QA_APPROVED, BatchItemStatusEnum.DISPATCHED):
+            if item.current_status == BatchItemStatusEnum.DISPATCHED:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unit {item.serial_number} has already been dispatched."
+                )
+            if item.current_status != BatchItemStatusEnum.QA_APPROVED:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Unit {item.serial_number} is in '{item.current_status.value}' state. "
                            f"Only QA_APPROVED units can be dispatched. "
                            f"Each unit must be individually approved by a QA inspector before dispatch."
+                )
+            existing_d_item = db.query(DispatchItem).filter(DispatchItem.batch_item_id == item.id).first()
+            if existing_d_item:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unit {item.serial_number} is already attached to dispatch order #{existing_d_item.dispatch_order_id}."
                 )
             items_to_dispatch.append(item)
 
@@ -164,11 +175,19 @@ def update_dispatch_status(
     if not dispatch:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dispatch order with id {id} not found.")
 
-    dispatch.status = new_status
     if new_status == DispatchStatusEnum.DISPATCHED:
         for item in dispatch.items:
             if item.batch_item:
+                if item.batch_item.current_status != BatchItemStatusEnum.QA_APPROVED and item.batch_item.current_status != BatchItemStatusEnum.DISPATCHED:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Unit '{item.batch_item.serial_number}' is in '{item.batch_item.current_status.value}' state. Only QA_APPROVED units can be dispatched."
+                    )
                 item.batch_item.current_status = BatchItemStatusEnum.DISPATCHED
+        if dispatch.batch:
+            dispatch.batch.current_status = BatchStatusEnum.DISPATCHED
+
+    dispatch.status = new_status
 
     db.commit()
     db.refresh(dispatch)

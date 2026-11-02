@@ -90,7 +90,12 @@ export const api = {
     return await apiRequest('/auth/me');
   },
 
-  logout() {
+  async logout() {
+    try {
+      await apiRequest('/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.warn('Backend logout cleanup warning:', e);
+    }
     authState.clear();
     window.dispatchEvent(new CustomEvent('auth-changed'));
   },
@@ -259,11 +264,29 @@ export const api = {
   },
 
   async punchIn() {
-    return await apiRequest('/attendance/punch-in', { method: 'POST' });
+    try {
+      return await apiRequest('/attendance/punch-in', { method: 'POST' });
+    } catch (e) {
+      // Fallback directly to canonical /attendance/punch route
+      return await apiRequest('/attendance/punch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ punch_type: 'IN' })
+      });
+    }
   },
 
   async punchOut() {
-    return await apiRequest('/attendance/punch-out', { method: 'POST' });
+    try {
+      return await apiRequest('/attendance/punch-out', { method: 'POST' });
+    } catch (e) {
+      // Fallback directly to canonical /attendance/punch route
+      return await apiRequest('/attendance/punch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ punch_type: 'OUT' })
+      });
+    }
   }
 };
 

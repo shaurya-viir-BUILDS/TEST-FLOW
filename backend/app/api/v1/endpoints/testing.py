@@ -76,7 +76,13 @@ async def upload_bench_csv(
             detail="File must be a CSV (.csv) file exported from test bench."
         )
 
-    file_bytes = await file.read()
+    MAX_BENCH_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+    file_bytes = await file.read(MAX_BENCH_UPLOAD_SIZE + 1)
+    if len(file_bytes) > MAX_BENCH_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Bench CSV file exceeds maximum allowed limit of {MAX_BENCH_UPLOAD_SIZE // (1024 * 1024)}MB."
+        )
     result = parse_bench_csv(file_bytes, template_id, technician_id=current_user.id, db=db)
     return result
 

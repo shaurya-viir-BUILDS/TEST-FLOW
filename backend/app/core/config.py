@@ -71,6 +71,12 @@ class Settings(BaseSettings):
         if self.is_production:
             if not self.SECRET_KEY or self.SECRET_KEY.strip() in _KNOWN_UNSAFE_SECRETS:
                 raise ValueError("Production environment requires a unique, non-default SECRET_KEY")
+            db_uri = self.sqlalchemy_database_uri
+            if not db_uri or db_uri.startswith("sqlite"):
+                raise ValueError(
+                    "Production environment cannot use default SQLite. "
+                    "Configure POSTGRES_URL or a PostgreSQL DATABASE_URL."
+                )
         return self
 
 

@@ -35,7 +35,9 @@ SEED_FILE = Path(__file__).resolve().parents[3] / "data" / "synthetic_demo" / "s
 def load_synthetic_demo_seed(db: Session = None):
     owns_session = False
     if db is None:
-        Base.metadata.create_all(bind=engine)
+        from app.core.config import settings
+        if not settings.is_production and settings.sqlalchemy_database_uri.startswith("sqlite"):
+            Base.metadata.create_all(bind=engine)
         db = SessionLocal()
         owns_session = True
 

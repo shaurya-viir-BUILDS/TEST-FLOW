@@ -148,7 +148,7 @@
       </div>
 
       <!-- Right Column: All Roles & Authentication IDs -->
-      <div class="lg:col-span-7 space-y-4">
+      <div class="lg:col-span-7 space-y-4" id="demo-credentials-section">
         
         <div class="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm card-smoke">
           <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
@@ -191,10 +191,19 @@
         title: "Operations Manager",
         role: "OPERATIONS_MGR",
         badgeColor: "bg-red-50 text-[#E7473C] border-red-200",
-        email: "emp-syn-001@testflow-demo.local",
-        password: "DemoPass123!",
-        name: "Synthetic Manager One",
+        email: "sambhav.yadav@testflow.local",
+        password: "12345",
+        name: "Sambhav Yadav",
         desc: "First-pass yield monitoring, line throughput, and shift analytics."
+      },
+      {
+        title: "Super Admin",
+        role: "SUPER_ADMIN",
+        badgeColor: "bg-zinc-100 text-zinc-900 border-zinc-300 font-bold",
+        email: "shaurya.singh@testflow.local",
+        password: "67890",
+        name: "Shaurya Viir Singh",
+        desc: "Full administrative access, user creation, and system configuration."
       },
       {
         title: "QA Inspector",
@@ -233,15 +242,6 @@
         desc: "Manual parameter checklist measurements and bench test execution queue."
       },
       {
-        title: "Super Admin",
-        role: "SUPER_ADMIN",
-        badgeColor: "bg-zinc-100 text-zinc-900 border-zinc-300 font-bold",
-        email: "admin@testflow.local",
-        password: "Admin123!",
-        name: "Alex Admin",
-        desc: "Full administrative access, user creation, and system configuration."
-      },
-      {
         title: "HR Officer",
         role: "HR_OFFICER",
         badgeColor: "bg-pink-50 text-pink-700 border-pink-200",
@@ -252,6 +252,45 @@
       }
     ];
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Check demo status from backend to hide credentials in production
+    async function checkDemoStatus() {
+      try {
+        const res = await fetch('/api/v1/auth/demo-status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.demo_enabled === false) {
+            const section = document.getElementById('demo-credentials-section');
+            if (section) {
+              section.innerHTML = `
+                <div class="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm card-smoke">
+                  <div class="flex items-center gap-3 text-zinc-800">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-emerald-600"></i>
+                    <div>
+                      <h3 class="text-sm font-bold text-zinc-900">Production Mode Active</h3>
+                      <p class="text-xs text-zinc-500 mt-0.5">Public demo credentials and quick sign-in are disabled for production security.</p>
+                    </div>
+                  </div>
+                </div>
+              `;
+              if (window.lucide) window.lucide.createIcons();
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback: continue in local dev mode
+      }
+    }
+
     // Render Roles Table
     function renderRoles() {
       const container = document.getElementById('roles-list');
@@ -261,18 +300,18 @@
         <div class="p-3.5 bg-zinc-50/70 hover:bg-white rounded-xl border border-zinc-200 hover:border-[#E7473C]/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-zinc-900">${r.title}</span>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${r.badgeColor}">${r.role}</span>
+              <span class="text-xs font-bold text-zinc-900">${escapeHtml(r.title)} (${escapeHtml(r.name)})</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${escapeHtml(r.badgeColor)}">${escapeHtml(r.role)}</span>
             </div>
-            <div class="text-[11px] text-zinc-500">${r.desc}</div>
+            <div class="text-[11px] text-zinc-500">${escapeHtml(r.desc)}</div>
             <div class="flex flex-wrap items-center gap-3 pt-0.5 text-[11px] font-mono">
-              <span class="text-zinc-600">ID: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${r.email}</code></span>
-              <span class="text-zinc-600">PW: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${r.password}</code></span>
+              <span class="text-zinc-600">ID: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${escapeHtml(r.email)}</code></span>
+              <span class="text-zinc-600">PW: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${escapeHtml(r.password)}</code></span>
             </div>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <button onclick="fillAndLogin('${r.email}', '${r.password}')" 
+            <button onclick="fillAndLogin('${encodeURIComponent(r.email)}', '${encodeURIComponent(r.password)}')" 
               class="tf-btn tf-btn-primary tf-btn-sm shrink-0">
               <i data-lucide="zap" class="w-3.5 h-3.5"></i>
               <span>1-Click Sign In</span>
@@ -312,8 +351,8 @@
 
     // Fill & Submit Form
     window.fillAndLogin = function(email, password) {
-      document.getElementById('email').value = email;
-      document.getElementById('password').value = password;
+      document.getElementById('email').value = decodeURIComponent(email);
+      document.getElementById('password').value = decodeURIComponent(password);
       document.getElementById('login-form').dispatchEvent(new Event('submit'));
     };
 
@@ -360,6 +399,7 @@
     // Init
     document.addEventListener('DOMContentLoaded', () => {
       renderRoles();
+      checkDemoStatus();
       if (window.lucide) window.lucide.createIcons();
     });
   </script>

@@ -46,6 +46,13 @@ def create_employee(
     db: Session = Depends(get_db),
     _current_user: Employee = Depends(require_role([RoleEnum.SUPER_ADMIN, RoleEnum.HR_OFFICER]))
 ):
+    # Only Super Admin can create accounts with Super Admin role
+    if emp_in.role == RoleEnum.SUPER_ADMIN and _current_user.role != RoleEnum.SUPER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Super Admin can assign the Super Admin role."
+        )
+
     # Check duplicate email
     if db.query(Employee).filter(Employee.email == emp_in.email.lower().strip()).first():
         raise HTTPException(
@@ -120,6 +127,26 @@ def update_employee(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Employee with id {id} not found."
         )
+
+    # Non-super-admins cannot edit a Super Admin account
+    if employee.role == RoleEnum.SUPER_ADMIN and _current_user.role != RoleEnum.SUPER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only Super Admin can modify a Super Admin account."
+        )
+
+    # Cannot modify own role (e.g., HR self-promotion to Super Admin)
+    if emp_in.role is not None:
+        if emp_in.role == RoleEnum.SUPER_ADMIN and _current_user.role != RoleEnum.SUPER_ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only Super Admin can grant the Super Admin role."
+            )
+        if employee.id == _current_user.id and emp_in.role != _current_user.role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Employees are not permitted to modify their own role."
+            )
 
     if emp_in.email is not None:
         email_clean = emp_in.email.lower().strip()

@@ -153,11 +153,23 @@ def parse_attendance_excel(file_bytes: bytes, db: Session) -> ExcelImportResult:
 
         punch_in = None
         if "punch_in" in col_map and col_map["punch_in"] < len(row_data):
-            punch_in = _parse_time(row_data[col_map["punch_in"]])
+            raw_punch_in = row_data[col_map["punch_in"]]
+            if raw_punch_in is not None and str(raw_punch_in).strip():
+                punch_in = _parse_time(raw_punch_in)
+                if punch_in is None:
+                    errors.append(ExcelRowError(row=row_idx, emp_code=str(raw_code), reason=f"Invalid punch_in time format: '{raw_punch_in}'"))
+                    skipped_count += 1
+                    continue
 
         punch_out = None
         if "punch_out" in col_map and col_map["punch_out"] < len(row_data):
-            punch_out = _parse_time(row_data[col_map["punch_out"]])
+            raw_punch_out = row_data[col_map["punch_out"]]
+            if raw_punch_out is not None and str(raw_punch_out).strip():
+                punch_out = _parse_time(raw_punch_out)
+                if punch_out is None:
+                    errors.append(ExcelRowError(row=row_idx, emp_code=str(raw_code), reason=f"Invalid punch_out time format: '{raw_punch_out}'"))
+                    skipped_count += 1
+                    continue
 
         raw_status = None
         if "status" in col_map and col_map["status"] < len(row_data):

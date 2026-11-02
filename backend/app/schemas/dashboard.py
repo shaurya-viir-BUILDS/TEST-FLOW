@@ -17,6 +17,13 @@ class DashboardOverviewResponse(BaseModel):
     active_technicians_on_shift: int
     today_attendance_percentage: float
 
+    # Frontend dual-compatibility fields
+    passed_units: int = 0
+    failed_units: int = 0
+    total_registered_units: int = 0
+    tested_units: int = 0
+    attendance_rate_today: float = 0.0
+
 
 class TestingDashboardResponse(BaseModel):
     total_assignments: int

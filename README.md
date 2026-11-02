@@ -74,27 +74,42 @@ testflow/
 
 ## 6. Current Status & Next Steps
 
-The **FastAPI backend is implemented** (auth/HR, catalog, batches, testing, QA, dispatch, dashboards, and synthetic demo seed). Interactive docs are at `/docs`. The React frontend listed in the stack is not in this repository yet.
+The platform is fully implemented with:
+- **FastAPI backend**: Authentication, RBAC, catalogs, batches, manual/bench testing engine, QA review, outbound dispatch, and analytics. Interactive OpenAPI documentation is at `/docs`.
+- **Integrated Web Console frontend**: Pure modern HTML5/ES modules UI located in `/frontend`, mounted automatically at `http://127.0.0.1:8000/` and `/static/login.html`.
 
-### Local run (backend)
+### Local run (Backend & Frontend Console)
 
 ```bash
 cd backend
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m app.db.seed                 # optional staff accounts
-python -m app.db.load_synthetic_seed  # optional 120-unit demo
+
+# For local development with SQLite (default):
+python -m app.db.seed                 # Seeds staff accounts (Shaurya Viir Singh & Sambhav Yadav)
+python -m app.db.load_synthetic_seed  # Seeds 120-unit relational test demo dataset
 uvicorn app.main:app --reload --app-dir .
 ```
+Access the web console at `http://127.0.0.1:8000/` (or `http://127.0.0.1:8000/static/login.html`).
 
-Default database is SQLite (`./testflow.db`). For PostgreSQL, set `POSTGRES_URL` (takes precedence) or `DATABASE_URL`, then apply migrations:
+### Production & PostgreSQL Migration Order
+
+For PostgreSQL staging or production, set `POSTGRES_URL` (or `DATABASE_URL`) and `ENVIRONMENT=production`. **Always run migrations before seeding**:
 
 ```bash
 cd backend
+# 1. Apply baseline Alembic database migration first
 alembic upgrade head
+
+# 2. Run initial administrative bootstrap (if needed)
+ALLOW_SEED_IN_PRODUCTION=true python -m app.db.seed
 ```
 
-Set `SECRET_KEY` when `ENVIRONMENT=production`. Login cookies use `secure=True` in production (or when `COOKIE_SECURE=true`).
-
-Remaining work follows [docs/roadmap.md](docs/roadmap.md), including the Vite/React UI.
+### Security & Production Guardrails
+- `SECRET_KEY` is mandatory when `ENVIRONMENT=production` and must not use known insecure dev defaults.
+- Default SQLite is blocked in production; a PostgreSQL URI is required.
+- Public 1-click demo personas and credential listings are automatically disabled in production mode.
+- In local development, demo accounts are:
+  - **Operations Manager**: `sambhav.yadav@testflow.local` / Password: `12345` (Sambhav Yadav)
+  - **Super Admin**: `shaurya.singh@testflow.local` / Password: `67890` (Shaurya Viir Singh)
 

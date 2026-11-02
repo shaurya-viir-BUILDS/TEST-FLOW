@@ -55,8 +55,23 @@ def get_dashboard_overview(
 
     overall_yield = round((successful_total / max(tested_total, 1)) * 100, 1) if tested_total > 0 else 0.0
 
-    # First pass yield calculation (sessions where overall_result == PASS / total unique tested units)
-    first_pass_yield = overall_yield
+    # First pass yield calculation (first test session per unit)
+    first_sessions_sub = (
+        db.query(
+            TestSession.batch_item_id,
+            func.min(TestSession.id).label("min_session_id")
+        )
+        .group_by(TestSession.batch_item_id)
+        .subquery()
+    )
+    first_sessions = (
+        db.query(TestSession.overall_result)
+        .join(first_sessions_sub, TestSession.id == first_sessions_sub.c.min_session_id)
+        .all()
+    )
+    total_first_pass_units = len(first_sessions)
+    first_pass_success = sum(1 for (res,) in first_sessions if res == TestResultEnum.PASS)
+    first_pass_yield = round((first_pass_success / max(total_first_pass_units, 1)) * 100, 1) if total_first_pass_units > 0 else 0.0
 
     open_defects = db.query(DefectLog).filter(DefectLog.is_resolved == False).count()
 
@@ -84,7 +99,12 @@ def get_dashboard_overview(
         first_pass_yield_percentage=first_pass_yield,
         open_defects_count=open_defects,
         active_technicians_on_shift=technicians_on_shift,
-        today_attendance_percentage=att_pct
+        today_attendance_percentage=att_pct,
+        passed_units=units_passed,
+        failed_units=units_failed,
+        total_registered_units=total_units,
+        tested_units=tested_total,
+        attendance_rate_today=att_pct
     )
 
 
@@ -253,8 +273,23 @@ def get_attendance_report(
             "attendance_rate": rate
         })
 
+    # Determine period dynamically from actual records
+    if records:
+        valid_dates = [r.attendance_date for r in records if r.attendance_date]
+        if valid_dates:
+            min_date = min(valid_dates)
+            max_date = max(valid_dates)
+            if min_date == max_date:
+                period_str = min_date.strftime("%B %Y")
+            else:
+                period_str = f"{min_date.strftime('%B %Y')} - {max_date.strftime('%B %Y')}"
+        else:
+            period_str = "All Time"
+    else:
+        period_str = "No Records"
+
     return AttendanceReportResponse(
-        period="August 2026 - October 2026",
+        period=period_str,
         total_records=len(records),
         status_distribution=dist,
         employee_rates=emp_rates

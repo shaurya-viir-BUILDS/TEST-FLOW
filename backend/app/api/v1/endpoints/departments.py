@@ -2,16 +2,19 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, require_role
+from app.api.deps import get_db, get_current_user, require_role
 from app.models.department import Department
-from app.models.employee import RoleEnum
+from app.models.employee import Employee, RoleEnum
 from app.schemas.department import DepartmentCreate, DepartmentResponse
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[DepartmentResponse])
-def list_departments(db: Session = Depends(get_db)):
+def list_departments(
+    db: Session = Depends(get_db),
+    _current_user: Employee = Depends(get_current_user)
+):
     return db.query(Department).order_by(Department.name).all()
 
 

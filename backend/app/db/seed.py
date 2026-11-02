@@ -7,8 +7,26 @@ from app.models.department import Department
 from app.models.employee import Employee, RoleEnum
 
 
+"""
+Initial database seed script to populate default departments and initial user accounts.
+"""
+import os
+from app.core.config import settings
+from app.core.database import SessionLocal, Base, engine
+from app.core.security import get_password_hash
+from app.models.department import Department
+from app.models.employee import Employee, RoleEnum
+
+
 def seed_data():
-    Base.metadata.create_all(bind=engine)
+    if settings.is_production and os.getenv("ALLOW_SEED_IN_PRODUCTION", "false").lower() not in ("true", "1"):
+        print("⚠ Refusing to seed default demo credentials in PRODUCTION environment.")
+        return
+
+    # Only create tables via Base.metadata during SQLite development without migrations
+    if not settings.is_production and settings.sqlalchemy_database_uri.startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)
+
     db = SessionLocal()
     try:
         # 1. Seed Departments
@@ -28,8 +46,10 @@ def seed_data():
                 db.flush()
             dept_map[code] = dept
 
-        # 2. Seed Default Staff Accounts
+        # 2. Seed Staff Accounts (including featured demo credentials)
         users_data = [
+            ("EMP-SHAURYA", "Shaurya", "Viir Singh", "shaurya.singh@testflow.local", "67890", RoleEnum.SUPER_ADMIN, "DEP-OPS"),
+            ("EMP-SAMBHAV", "Sambhav", "Yadav", "sambhav.yadav@testflow.local", "12345", RoleEnum.OPERATIONS_MGR, "DEP-OPS"),
             ("EMP-001", "Alex", "Admin", "admin@testflow.local", "Admin123!", RoleEnum.SUPER_ADMIN, "DEP-OPS"),
             ("EMP-002", "Hannah", "Reed", "hr@testflow.local", "HrPass123!", RoleEnum.HR_OFFICER, "DEP-HR"),
             ("EMP-003", "Sam", "Vance", "supervisor@testflow.local", "Super123!", RoleEnum.TEST_SUPERVISOR, "DEP-TEST"),
@@ -39,9 +59,11 @@ def seed_data():
         ]
 
         for emp_code, first, last, email, password, role, dept_code in users_data:
-            existing = db.query(Employee).filter(Employee.email == email).first()
+            existing = db.query(Employee).filter(
+                (Employee.email == email) | (Employee.emp_code == emp_code)
+            ).first()
+            dept = dept_map.get(dept_code)
             if not existing:
-                dept = dept_map.get(dept_code)
                 emp = Employee(
                     emp_code=emp_code,
                     first_name=first,
@@ -53,6 +75,13 @@ def seed_data():
                     is_active=True
                 )
                 db.add(emp)
+            else:
+                existing.first_name = first
+                existing.last_name = last
+                existing.email = email
+                existing.password_hash = get_password_hash(password)
+                existing.role = role
+                existing.is_active = True
 
         db.commit()
         print("✓ Database seeded successfully with initial departments and users.")

@@ -5,11 +5,14 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.batch import BatchItem, BatchItemStatusEnum
+from app.models.employee import Employee, RoleEnum
 from app.models.testing import (
     TestTemplate,
     TestParameter,
     TestSession,
     TestResultDetail,
+    TestTaskAllocation,
+    TaskAllocationStatusEnum,
     ParameterDataTypeEnum,
     TestExecutionTypeEnum,
     TestResultEnum
@@ -70,6 +73,45 @@ def execute_manual_test(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Active test template with id {request.template_id} not found."
         )
+
+    # 1. Reject testing on terminal / already approved or dispatched states
+    disallowed_states = {
+        BatchItemStatusEnum.QA_APPROVED,
+        BatchItemStatusEnum.QA_SCRAPPED,
+        BatchItemStatusEnum.DISPATCHED
+    }
+    if batch_item.current_status in disallowed_states:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unit '{batch_item.serial_number}' is in '{batch_item.current_status.value}' state and cannot be tested."
+        )
+
+    # 2. Enforce template belongs to product model of unit
+    if batch_item.batch and template.product_model_id != batch_item.batch.product_model_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Test template '{template.name}' belongs to a different product model than unit '{batch_item.serial_number}'."
+        )
+
+    # 3. Technician assignment check (if allocated to a specific technician, prevent others from testing)
+    active_alloc = db.query(TestTaskAllocation).filter(
+        TestTaskAllocation.batch_item_id == batch_item.id,
+        TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS])
+    ).first()
+    if not active_alloc:
+        active_alloc = db.query(TestTaskAllocation).filter(
+            TestTaskAllocation.batch_id == batch_item.batch_id,
+            TestTaskAllocation.batch_item_id == None,
+            TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS])
+        ).first()
+
+    if active_alloc and active_alloc.technician_id != technician_id:
+        tech_user = db.query(Employee).filter(Employee.id == technician_id).first()
+        if tech_user and tech_user.role == RoleEnum.TEST_TECHNICIAN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Unit '{batch_item.serial_number}' is allocated to another technician (ID {active_alloc.technician_id})."
+            )
 
     # Build parameter lookup
     param_map: Dict[int, TestParameter] = {p.id: p for p in template.parameters}
@@ -192,6 +234,42 @@ def parse_bench_csv(
             failed += 1
             processed += 1
             continue
+
+        disallowed_states = {
+            BatchItemStatusEnum.QA_APPROVED,
+            BatchItemStatusEnum.QA_SCRAPPED,
+            BatchItemStatusEnum.DISPATCHED
+        }
+        if item.current_status in disallowed_states:
+            failed_items.append({"serial_number": sn, "row": row_idx, "reason": f"Unit in '{item.current_status.value}' state cannot be tested."})
+            failed += 1
+            processed += 1
+            continue
+
+        if item.batch and template.product_model_id != item.batch.product_model_id:
+            failed_items.append({"serial_number": sn, "row": row_idx, "reason": "Test template does not match product model of unit"})
+            failed += 1
+            processed += 1
+            continue
+
+        active_alloc = db.query(TestTaskAllocation).filter(
+            TestTaskAllocation.batch_item_id == item.id,
+            TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS])
+        ).first()
+        if not active_alloc:
+            active_alloc = db.query(TestTaskAllocation).filter(
+                TestTaskAllocation.batch_id == item.batch_id,
+                TestTaskAllocation.batch_item_id == None,
+                TestTaskAllocation.status.in_([TaskAllocationStatusEnum.PENDING, TaskAllocationStatusEnum.IN_PROGRESS])
+            ).first()
+
+        if active_alloc and active_alloc.technician_id != technician_id:
+            caller = db.query(Employee).filter(Employee.id == technician_id).first()
+            if caller and caller.role == RoleEnum.TEST_TECHNICIAN:
+                failed_items.append({"serial_number": sn, "row": row_idx, "reason": f"Unit assigned to technician ID {active_alloc.technician_id}"})
+                failed += 1
+                processed += 1
+                continue
 
         overall_pass = True
         details = []
