@@ -1,10 +1,10 @@
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from app.models.employee import RoleEnum
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 
@@ -24,7 +24,7 @@ class UserMeResponse(BaseModel):
     emp_code: str
     first_name: str
     last_name: str
-    email: EmailStr
+    email: str
     role: RoleEnum
     department_id: Optional[int] = None
     department_name: Optional[str] = None

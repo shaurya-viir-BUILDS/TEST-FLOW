@@ -1,19 +1,22 @@
 /* =========================================================
-   TestFlow — Red (#B4121B) & Black (#000000) Theme
-   Industrial Grade Electronics QA & Operations Console
+   TestFlow — White Smoke (#F0F0F0) & Bright Red (#E7473C) Theme
+   High-Precision Electronics QA & Operations Console
    ========================================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary-red: #B4121B;
-  --primary-red-hover: #cf1722;
-  --primary-red-dark: #7a0a10;
-  --bg-pure-black: #000000;
-  --bg-card: #0a0a0a;
-  --bg-card-hover: #121212;
-  --border-subtle: #1f1f1f;
-  --border-active: rgba(180, 18, 27, 0.5);
+  --primary-red: #E7473C;
+  --primary-red-hover: #d6382d;
+  --primary-red-light: rgba(231, 71, 60, 0.08);
+  --primary-red-glow: rgba(231, 71, 60, 0.25);
+  --bg-smoke: #F0F0F0;
+  --bg-card: #FFFFFF;
+  --bg-card-alt: #F9FAFB;
+  --border-light: #E5E7EB;
+  --border-subtle: #F3F4F6;
+  --text-main: #111827;
+  --text-muted: #6B7280;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
@@ -24,35 +27,36 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-pure-black);
-  color: #f4f4f5;
+  background-color: var(--bg-smoke);
+  color: var(--text-main);
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 code, .font-mono {
   font-family: var(--font-mono);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar for Light / Smoke Theme */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #F0F0F0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #222222;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B4121B;
+  background: #E7473C;
 }
 
-/* Animations */
-@keyframes fadeInSlide {
+/* Micro-Animations */
+@keyframes fadeInSlideUp {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -64,87 +68,130 @@ code, .font-mono {
 }
 
 .animate-fade-in {
-  animation: fadeInSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes pulseGlow {
+@keyframes redPulse {
   0%, 100% {
-    box-shadow: 0 0 15px -3px rgba(180, 18, 27, 0.3);
+    box-shadow: 0 0 0 0 rgba(231, 71, 60, 0.4);
   }
   50% {
-    box-shadow: 0 0 25px 2px rgba(180, 18, 27, 0.6);
+    box-shadow: 0 0 0 6px rgba(231, 71, 60, 0);
   }
 }
 
-.pulse-red {
-  animation: pulseGlow 2.5s infinite;
+.pulse-red-dot {
+  animation: redPulse 2s infinite;
 }
 
-/* Card Glows */
-.glow-red {
-  box-shadow: 0 0 25px -5px rgba(180, 18, 27, 0.3);
+/* Card Styling & Hover Animation */
+.card-smoke {
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.hover-glow-red {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+.card-smoke:hover {
+  border-color: #E7473C !important;
+  box-shadow: 0 10px 25px -4px rgba(231, 71, 60, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
 }
-.hover-glow-red:hover {
-  border-color: rgba(180, 18, 27, 0.6) !important;
-  box-shadow: 0 0 20px -3px rgba(180, 18, 27, 0.35);
+
+/* Side Panel Navigation Refinement */
+.nav-tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4B5563;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+}
+
+.nav-tab-item svg,
+.nav-tab-item i {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.22s ease;
+  flex-shrink: 0;
+}
+
+.nav-tab-item:hover {
+  background-color: rgba(231, 71, 60, 0.06);
+  color: #111827;
+  padding-left: 1.1rem;
+}
+
+.nav-tab-item:hover svg,
+.nav-tab-item:hover i {
+  color: #E7473C !important;
+  transform: scale(1.15) translateX(1px);
+}
+
+.nav-tab-active {
+  background: linear-gradient(90deg, rgba(231, 71, 60, 0.12) 0%, rgba(231, 71, 60, 0.01) 100%) !important;
+  color: #E7473C !important;
+  font-weight: 600 !important;
+  border-left: 3px solid #E7473C !important;
+  box-shadow: inset 2px 0 6px -2px rgba(231, 71, 60, 0.2);
+}
+
+.nav-tab-active svg,
+.nav-tab-active i {
+  color: #E7473C !important;
+}
+
+/* Primary Button (Bright Red #E7473C) */
+.btn-red {
+  background: #E7473C;
+  color: #FFFFFF;
+  border: 1px solid #d6382d;
+  box-shadow: 0 2px 8px rgba(231, 71, 60, 0.25);
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.btn-red:hover {
+  background: #d6382d;
+  box-shadow: 0 4px 14px rgba(231, 71, 60, 0.38);
   transform: translateY(-1px);
 }
 
-/* Status Badges */
+.btn-red:active {
+  transform: translateY(0);
+}
+
+/* Status Badges in Smoke & Bright Red palette */
 .badge-passed {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
 }
 
 .badge-failed {
-  background: rgba(180, 18, 27, 0.18);
-  color: #ff4d58;
-  border: 1px solid rgba(180, 18, 27, 0.45);
+  background: #FEF2F2;
+  color: #E7473C;
+  border: 1px solid #FECACA;
 }
 
 .badge-qa-approved {
-  background: rgba(180, 18, 27, 0.14);
-  color: #ff6b74;
-  border: 1px solid rgba(180, 18, 27, 0.35);
+  background: #FFF1F2;
+  color: #E7473C;
+  border: 1px solid #FFE4E6;
 }
 
 .badge-allocated {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 
 .badge-dispatched {
-  background: rgba(56, 189, 248, 0.12);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
-}
-
-/* Active Nav State */
-.nav-tab-active {
-  background: linear-gradient(90deg, rgba(180, 18, 27, 0.22) 0%, rgba(180, 18, 27, 0.05) 100%) !important;
-  color: #ffffff !important;
-  border-left: 3px solid #B4121B !important;
-}
-
-/* Button Primary (Red) */
-.btn-primary {
-  background: linear-gradient(135deg, #B4121B 0%, #870b13 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 10px rgba(180, 18, 27, 0.3);
-  transition: all 0.2s ease;
-}
-.btn-primary:hover {
-  background: linear-gradient(135deg, #cf1722 0%, #9e0e17 100%);
-  box-shadow: 0 4px 18px rgba(180, 18, 27, 0.5);
-  transform: translateY(-1px);
-}
-.btn-primary:active {
-  transform: translateY(0);
+  background: #F0F9FF;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
 }
