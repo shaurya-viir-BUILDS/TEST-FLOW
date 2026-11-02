@@ -55,3 +55,4 @@ class OperationalReportResponse(BaseModel):
     total_units: int
     batch_summary: List[Dict[str, Any]] = []
     dispatch_summary: List[Dict[str, Any]] = []
+

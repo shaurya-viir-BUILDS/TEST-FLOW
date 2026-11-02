@@ -215,3 +215,4 @@ def test_dashboard_endpoints(client, admin_headers):
     assert att_res.status_code == 200
     att = att_res.json()
     assert "employee_rates" in att
+

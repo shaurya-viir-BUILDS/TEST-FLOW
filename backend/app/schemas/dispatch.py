@@ -46,3 +46,4 @@ class TraceabilityTimelineResponse(BaseModel):
     defects: List[Dict[str, Any]] = []
     quality_review: Optional[Dict[str, Any]] = None
     dispatch: Optional[Dict[str, Any]] = None
+

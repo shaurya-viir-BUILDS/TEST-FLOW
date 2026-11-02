@@ -259,3 +259,4 @@ def get_attendance_report(
         status_distribution=dist,
         employee_rates=emp_rates
     )
+

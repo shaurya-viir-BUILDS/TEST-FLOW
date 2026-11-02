@@ -136,3 +136,4 @@ print(f"assignments={len(assignments)} results={len(results)} defects={len(DATA[
 print(f"product_statuses={dict(Counter(p['status'] for p in products.values()))}")
 print(f"result_statuses={dict(Counter(r['status'] for r in results.values()))}")
 print(f"attendance_statuses={dict(Counter(a['status'] for a in DATA['attendance_records']))}")
+

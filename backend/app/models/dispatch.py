@@ -45,3 +45,4 @@ class DispatchItem(Base):
 
     dispatch_order = relationship("DispatchOrder", back_populates="items")
     batch_item = relationship("BatchItem")
+

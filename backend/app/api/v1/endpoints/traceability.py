@@ -134,3 +134,4 @@ def get_serial_traceability(
         quality_review=qa_info,
         dispatch=dispatch_info
     )
+
