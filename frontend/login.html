@@ -55,55 +55,55 @@
 <body class="bg-[#F0F0F0] text-zinc-900 min-h-screen flex flex-col font-sans selection:bg-[#E7473C] selection:text-white antialiased">
 
   <!-- Top Simple Bar -->
-  <header class="border-b border-zinc-200 bg-white/90 backdrop-blur px-6 py-3.5 shadow-sm">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
-      <a href="/" class="flex items-center gap-3 select-none">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E7473C] to-[#b91c1c] p-0.5 shadow-md shadow-[#E7473C]/20 flex items-center justify-center">
+  <header class="border-b border-zinc-200 bg-white/95 backdrop-blur px-6 sm:px-10 py-4.5 shadow-sm">
+    <div class="w-full flex items-center justify-between">
+      <a href="/" class="flex items-center gap-3.5 select-none">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#E7473C] to-[#b91c1c] p-0.5 shadow-md shadow-[#E7473C]/20 flex items-center justify-center">
           <div class="w-full h-full bg-white rounded-[9px] flex items-center justify-center">
-            <i data-lucide="cpu" class="w-4 h-4 text-[#E7473C]"></i>
+            <i data-lucide="cpu" class="w-5 h-5 text-[#E7473C]"></i>
           </div>
         </div>
         <div>
-          <span class="font-extrabold text-lg tracking-tight text-zinc-900">TEST<span class="text-[#E7473C]">FLOW</span></span>
-          <span class="text-[9px] uppercase font-mono tracking-widest text-zinc-500 block font-medium">Electronics Operations</span>
+          <span class="font-extrabold text-2xl tracking-tight text-zinc-900 leading-none">TEST<span class="text-[#E7473C]">FLOW</span></span>
+          <span class="text-[10px] uppercase font-mono tracking-widest text-zinc-500 block font-semibold mt-1">Electronics Operations</span>
         </div>
       </a>
 
-      <a href="/" class="text-xs font-semibold text-zinc-600 hover:text-[#E7473C] transition flex items-center gap-1.5">
+      <a href="/" class="text-xs sm:text-sm font-semibold text-zinc-600 hover:text-[#E7473C] transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-zinc-100">
         <span>Console</span>
-        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </a>
     </div>
   </header>
 
   <!-- Main Container -->
   <main class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-auto">
+    <div class="w-full max-w-2xl mx-auto my-auto space-y-4">
       
-      <!-- Left Column: Sign In Form -->
-      <div class="lg:col-span-5 bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 shadow-sm card-smoke">
+      <!-- Sign In Form Window -->
+      <div class="bg-white border border-zinc-200 rounded-2xl p-6 sm:p-8 shadow-sm card-smoke">
         
         <!-- Header -->
-        <div class="mb-6">
-          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-red-50 text-[#E7473C] text-[11px] font-mono font-bold border border-red-200 mb-3">
+        <div class="mb-5">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-red-50 text-[#E7473C] text-[11px] font-mono font-bold border border-red-200 mb-2.5">
             <span class="w-1.5 h-1.5 rounded-full bg-[#E7473C] animate-pulse"></span>
             SECURE ACCESS
           </div>
           <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Sign in to TestFlow</h1>
-          <p class="text-xs text-zinc-500 mt-1">Select an employee role below or enter your credentials.</p>
+          <p class="text-xs text-zinc-500 mt-0.5">Select a role below or enter your credentials.</p>
         </div>
 
         <!-- Alert Notification -->
         <div id="login-alert" role="alert" aria-live="assertive" class="hidden mb-4 p-3 rounded-xl text-xs font-medium border"></div>
 
         <!-- Login Form -->
-        <form id="login-form" class="space-y-4">
+        <form id="login-form" class="space-y-3.5">
           <div>
             <label for="email" class="block text-xs font-semibold text-zinc-700 mb-1.5">Email / Authentication ID</label>
             <div class="relative">
               <i data-lucide="mail" class="w-4 h-4 text-zinc-400 absolute left-3.5 top-3"></i>
               <input type="text" id="email" required autocomplete="username"
-                placeholder="e.g. emp-syn-001@testflow-demo.local" 
+                placeholder="Enter email or employee ID" 
                 class="tf-input tf-input--mono pl-10 pr-4 py-2.5 text-xs" />
             </div>
           </div>
@@ -123,7 +123,7 @@
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-xs pt-1">
+          <div class="flex items-center justify-between text-xs pt-0.5">
             <label class="flex items-center gap-2 cursor-pointer text-zinc-600 select-none">
               <input type="checkbox" id="remember-me" checked class="rounded border-zinc-300 text-[#E7473C] focus:ring-[#E7473C]" />
               <span>Remember session</span>
@@ -131,54 +131,33 @@
             <span class="text-[11px] font-mono text-zinc-400">JWT Bearer 24h</span>
           </div>
 
-          <button type="submit" id="submit-btn" class="tf-btn tf-btn-primary w-full mt-2">
+          <button type="submit" id="submit-btn" class="tf-btn tf-btn-primary w-full mt-1.5">
             <i data-lucide="log-in" class="w-4 h-4"></i>
             <span id="btn-text">Sign In</span>
           </button>
         </form>
 
-        <div class="mt-6 pt-5 border-t border-zinc-100 flex items-center justify-between text-[11px] font-mono text-zinc-400">
-          <span>TestFlow v1.0 Production</span>
-          <span class="flex items-center gap-1.5 text-emerald-600 font-medium">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            Server Ready
-          </span>
+        <div class="mt-5 pt-3.5 border-t border-zinc-100 text-center text-[11px] font-mono text-zinc-400">
+          <span>TestFlow v1.0 Production &bull; Electronics OS</span>
         </div>
 
       </div>
 
-      <!-- Right Column: All Roles & Authentication IDs -->
-      <div class="lg:col-span-7 space-y-4" id="demo-credentials-section">
-        
-        <div class="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm card-smoke">
-          <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
-            <div>
-              <h2 class="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                <i data-lucide="key-round" class="w-4 h-4 text-[#E7473C]"></i>
-                Role Authentication Credentials
-              </h2>
-              <p class="text-xs text-zinc-500 mt-0.5">Click "1-Click Sign In" on any role to immediately test its permissions.</p>
-            </div>
-            <span class="text-[10px] font-mono uppercase bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-semibold border border-zinc-200">7 Active Roles</span>
+      <!-- Concise Role Authentication Credentials Section below Sign In Window -->
+      <div class="bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 shadow-sm card-smoke" id="demo-credentials-section">
+        <div class="flex items-center justify-between border-b border-zinc-100 pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="key-round" class="w-4 h-4 text-[#E7473C]"></i>
+            <h2 class="text-xs font-bold text-zinc-900">Role Authentication Credentials</h2>
+            <span class="text-[11px] text-zinc-400 hidden sm:inline">&bull; 1-Click test access</span>
           </div>
-
-          <!-- Roles Grid -->
-          <div class="space-y-2.5" id="roles-list">
-            <!-- Dynamically populated or static -->
-          </div>
+          <span class="text-[10px] font-mono uppercase bg-red-50 text-[#E7473C] px-2 py-0.5 rounded font-bold border border-red-200">7 Active Roles</span>
         </div>
 
-        <!-- Info callout -->
-        <div class="bg-red-50/60 border border-red-200/70 rounded-xl p-4 text-xs text-zinc-600 flex items-start gap-3">
-          <i data-lucide="info" class="w-4 h-4 text-[#E7473C] shrink-0 mt-0.5"></i>
-          <div>
-            <strong class="text-zinc-900 font-semibold">Quality & Role Enforcement:</strong>
-            <p class="mt-0.5 text-zinc-500 leading-relaxed">
-              Test technicians execute bench checklists; QA inspectors sign dispositions; store keepers generate outward challans; and operations managers monitor overall first-pass yield.
-            </p>
-          </div>
+        <!-- Concise Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="roles-list">
+          <!-- Dynamically populated concisely -->
         </div>
-
       </div>
 
     </div>
@@ -291,32 +270,32 @@
       }
     }
 
-    // Render Roles Table
+    // Render Roles Table Concurrently & Concisely
     function renderRoles() {
       const container = document.getElementById('roles-list');
       if (!container) return;
 
       container.innerHTML = ROLES_DIRECTORY.map((r, i) => `
-        <div class="p-3.5 bg-zinc-50/70 hover:bg-white rounded-xl border border-zinc-200 hover:border-[#E7473C]/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold text-zinc-900">${escapeHtml(r.title)} (${escapeHtml(r.name)})</span>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${escapeHtml(r.badgeColor)}">${escapeHtml(r.role)}</span>
+        <div class="p-2.5 bg-zinc-50/80 hover:bg-white rounded-xl border border-zinc-200 hover:border-[#E7473C]/50 transition-all flex items-center justify-between gap-2.5 group">
+          <div class="min-w-0 flex-1 space-y-0.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-zinc-900 truncate">${escapeHtml(r.title)}</span>
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border shrink-0 ${escapeHtml(r.badgeColor)}">${escapeHtml(r.role)}</span>
             </div>
-            <div class="text-[11px] text-zinc-500">${escapeHtml(r.desc)}</div>
-            <div class="flex flex-wrap items-center gap-3 pt-0.5 text-[11px] font-mono">
-              <span class="text-zinc-600">ID: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${escapeHtml(r.email)}</code></span>
-              <span class="text-zinc-600">PW: <code class="text-zinc-900 font-semibold bg-white px-1.5 py-0.5 rounded border border-zinc-200 select-all">${escapeHtml(r.password)}</code></span>
+            <div class="text-[11px] font-medium text-zinc-700 truncate">${escapeHtml(r.name)}</div>
+            <div class="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500 truncate">
+              <span class="truncate">${escapeHtml(r.email)}</span>
+              <span class="text-zinc-300">•</span>
+              <span class="font-semibold text-zinc-800">${escapeHtml(r.password)}</span>
             </div>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <button onclick="fillAndLogin('${encodeURIComponent(r.email)}', '${encodeURIComponent(r.password)}')" 
-              class="tf-btn tf-btn-primary tf-btn-sm shrink-0">
-              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-              <span>1-Click Sign In</span>
-            </button>
-          </div>
+          <button onclick="fillAndLogin('${encodeURIComponent(r.email)}', '${encodeURIComponent(r.password)}')" 
+            title="1-Click Sign In as ${escapeHtml(r.title)}"
+            class="tf-btn tf-btn-primary tf-btn-sm shrink-0 px-2.5 py-1 text-[11px]">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span class="hidden sm:inline">1-Click</span>
+          </button>
         </div>
       `).join('');
 
