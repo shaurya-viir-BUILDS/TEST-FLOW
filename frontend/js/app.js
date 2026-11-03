@@ -120,16 +120,21 @@ window.addEventListener('auth-changed', () => {
   renderUserBar();
 });
 
-// Quick login personas (All 7 Roles Supported with featured demo credentials)
+// Quick login personas (Only Operations Manager and Super Admin featured in topbar)
 const PERSONAS = [
-  { label: 'Operations Mgr (Sambhav)', email: 'sambhav.yadav@testflow.local', role: 'OPERATIONS_MGR', pass: '12345' },
+  { label: 'Operations Manager (Sambhav)', email: 'sambhav.yadav@testflow.local', role: 'OPERATIONS_MGR', pass: '12345' },
   { label: 'Super Admin (Shaurya)', email: 'shaurya.singh@testflow.local', role: 'SUPER_ADMIN', pass: '67890' },
-  { label: 'QA Inspector', email: 'emp-syn-013@testflow-demo.local', role: 'QA_INSPECTOR', pass: 'DemoPass123!' },
-  { label: 'Store Keeper', email: 'emp-syn-014@testflow-demo.local', role: 'STORE_KEEPER', pass: 'DemoPass123!' },
-  { label: 'Test Lead', email: 'emp-syn-005@testflow-demo.local', role: 'TEST_SUPERVISOR', pass: 'DemoPass123!' },
-  { label: 'Test Tech', email: 'emp-syn-007@testflow-demo.local', role: 'TEST_TECHNICIAN', pass: 'DemoPass123!' },
-  { label: 'HR Officer', email: 'emp-syn-003@testflow-demo.local', role: 'HR_OFFICER', pass: 'DemoPass123!' },
 ];
+
+const DEMO_CREDENTIALS = {
+  'sambhav.yadav@testflow.local': '12345',
+  'shaurya.singh@testflow.local': '67890',
+  'emp-syn-013@testflow-demo.local': 'DemoPass123!',
+  'emp-syn-014@testflow-demo.local': 'DemoPass123!',
+  'emp-syn-005@testflow-demo.local': 'DemoPass123!',
+  'emp-syn-007@testflow-demo.local': 'DemoPass123!',
+  'emp-syn-003@testflow-demo.local': 'DemoPass123!',
+};
 
 let isDemoModeActive = true;
 async function fetchDemoStatus() {
@@ -146,10 +151,10 @@ async function fetchDemoStatus() {
 }
 fetchDemoStatus();
 
-export async function loginAs(email, password = 'DemoPass123!') {
+export async function loginAs(email, password = null) {
   try {
     const persona = PERSONAS.find(p => p.email === email);
-    const pass = persona ? persona.pass : password;
+    const pass = password || (persona ? persona.pass : DEMO_CREDENTIALS[email]) || 'DemoPass123!';
     showToast(`Activating persona...`, 'info');
     await api.login(email, pass);
     showToast('Persona activated successfully!', 'success');
